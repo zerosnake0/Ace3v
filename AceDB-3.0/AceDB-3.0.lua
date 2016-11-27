@@ -51,7 +51,7 @@ local type, pairs, next, error = type, pairs, next, error
 local setmetatable, getmetatable, rawset, rawget = setmetatable, getmetatable, rawset, rawget
 
 -- WoW APIs
-local _G = _G
+local _G = getfenv(0)
 
 -- Global vars/functions that we don't upvalue since they might get hooked, or upgraded
 -- List them here for Mikk's FindGlobals script
@@ -259,13 +259,7 @@ local realmKey = GetRealmName()
 local charKey = UnitName("player") .. " - " .. realmKey
 local _, classKey = UnitClass("player")
 local _, raceKey = UnitRace("player")
-local factionKey = UnitFactionGroup("player")
-local factionrealmKey = factionKey .. " - " .. realmKey
-local localeKey = GetLocale():lower()
-
-local regionTable = { "US", "KR", "EU", "TW", "CN" }
-local regionKey = regionTable[GetCurrentRegion()]
-local factionrealmregionKey = factionrealmKey .. " - " .. regionKey
+local localeKey = string.lower(GetLocale())
 
 -- Actual database initialization function
 local function initdb(sv, defaults, defaultProfile, olddb, parent)
@@ -300,9 +294,9 @@ local function initdb(sv, defaults, defaultProfile, olddb, parent)
 		["realm"] = realmKey,
 		["class"] = classKey,
 		["race"] = raceKey,
-		["faction"] = factionKey,
-		["factionrealm"] = factionrealmKey,
-		["factionrealmregion"] = factionrealmregionKey,
+		-- Ace3v: must put here or error when character log in
+		["faction"] = UnitFactionGroup("player"),
+		["factionrealm"] = UnitFactionGroup("player") .. " - " .. realmKey,
 		["profile"] = profileKey,
 		["locale"] = localeKey,
 		["global"] = true,

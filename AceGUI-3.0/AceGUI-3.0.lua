@@ -31,11 +31,12 @@ local AceGUI, oldminor = LibStub:NewLibrary(ACEGUI_MAJOR, ACEGUI_MINOR)
 if not AceGUI then return end -- No upgrade needed
 
 -- Lua APIs
-local tconcat, tremove, tinsert = table.concat, table.remove, table.insert
+local tconcat, tremove, tinsert, tgetn = table.concat, table.remove, table.insert, table.getn
 local select, pairs, next, type = select, pairs, next, type
 local error, assert, loadstring = error, assert, loadstring
 local setmetatable, rawget, rawset = setmetatable, rawget, rawset
 local math_max = math.max
+local strupper = string.upper
 
 -- WoW APIs
 local UIParent = UIParent
@@ -60,46 +61,7 @@ local WidgetVersions = AceGUI.WidgetVersions
 --[[
 	 xpcall safecall implementation
 ]]
-local xpcall = xpcall
-
-local function errorhandler(err)
-	return geterrorhandler()(err)
-end
-
-local function CreateDispatcher(argCount)
-	local code = [[
-		local xpcall, eh = ...
-		local method, ARGS
-		local function call() return method(ARGS) end
-	
-		local function dispatch(func, ...)
-			method = func
-			if not method then return end
-			ARGS = ...
-			return xpcall(call, eh)
-		end
-	
-		return dispatch
-	]]
-	
-	local ARGS = {}
-	for i = 1, argCount do ARGS[i] = "arg"..i end
-	code = code:gsub("ARGS", tconcat(ARGS, ", "))
-	return assert(loadstring(code, "safecall Dispatcher["..argCount.."]"))(xpcall, errorhandler)
-end
-
-local Dispatchers = setmetatable({}, {__index=function(self, argCount)
-	local dispatcher = CreateDispatcher(argCount)
-	rawset(self, argCount, dispatcher)
-	return dispatcher
-end})
-Dispatchers[0] = function(func)
-	return xpcall(func, errorhandler)
-end
- 
-local function safecall(func, ...)
-	return Dispatchers[select("#", ...)](func, ...)
-end
+local safecall = safecall
 
 -- Recycling functions
 local newWidget, delWidget
@@ -309,9 +271,9 @@ do
 		end
 	end
 	
-	WidgetBase.Fire = function(self, name, ...)
+	WidgetBase.Fire = function(self, name, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 		if self.events[name] then
-			local success, ret = safecall(self.events[name], self, name, ...)
+			local success, ret = safecall(self.events[name], self, name, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 			if success then
 				return ret
 			end
@@ -362,8 +324,8 @@ do
 		AceGUI:Release(self)
 	end
 	
-	WidgetBase.SetPoint = function(self, ...)
-		return self.frame:SetPoint(...)
+	WidgetBase.SetPoint = function(self, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+		return self.frame:SetPoint(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	end
 	
 	WidgetBase.ClearAllPoints = function(self)
@@ -374,8 +336,8 @@ do
 		return self.frame:GetNumPoints()
 	end
 	
-	WidgetBase.GetPoint = function(self, ...)
-		return self.frame:GetPoint(...)
+	WidgetBase.GetPoint = function(self, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+		return self.frame:GetPoint(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	end	
 	
 	WidgetBase.GetUserDataTable = function(self)
@@ -462,19 +424,32 @@ do
 		self:DoLayout()
 	end
 	
-	WidgetContainerBase.AddChildren = function(self, ...)
-		for i = 1, select("#", ...) do
-			local child = select(i, ...)
+	do
+	local args = {nil,nil,nil,nil,nil,nil,nil,nil,nil,nil}
+	WidgetContainerBase.AddChildren = function(self, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+		args[1] = a1
+		args[2] = a2
+		args[3] = a3
+		args[4] = a4
+		args[5] = a5
+		args[6] = a6
+		args[7] = a7
+		args[8] = a8
+		args[9] = a9
+		args[10] = a10
+		for i = 1,tgetn(args) do
+			local child = args[i]
 			tinsert(self.children, child)
 			child:SetParent(self)
 			child.frame:Show()
 		end
 		self:DoLayout()
 	end
+	end -- WidgetContainerBase.AddChildren
 	
 	WidgetContainerBase.ReleaseChildren = function(self)
 		local children = self.children
-		for i = 1,#children do
+		for i = 1,tgetn(children) do
 			AceGUI:Release(children[i])
 			children[i] = nil
 		end
@@ -573,7 +548,7 @@ end
 function AceGUI:RegisterLayout(Name, LayoutFunc)
 	assert(type(LayoutFunc) == "function")
 	if type(Name) == "string" then
-		Name = Name:upper()
+		Name = string.upper(Name)
 	end
 	LayoutRegistry[Name] = LayoutFunc
 end
@@ -582,7 +557,7 @@ end
 -- @param Name The name of the layout
 function AceGUI:GetLayout(Name)
 	if type(Name) == "string" then
-		Name = Name:upper()
+		Name = strupper(Name)
 	end
 	return LayoutRegistry[Name]
 end
@@ -629,7 +604,7 @@ AceGUI:RegisterLayout("List",
 	function(content, children)
 		local height = 0
 		local width = content.width or content:GetWidth() or 0
-		for i = 1, #children do
+		for i = 1, tgetn(children) do
 			local child = children[i]
 			
 			local frame = child.frame
@@ -674,9 +649,9 @@ AceGUI:RegisterLayout("Fill",
 	end)
 
 local layoutrecursionblock = nil
-local function safelayoutcall(object, func, ...)
+local function safelayoutcall(object, func, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	layoutrecursionblock = true
-	object[func](object, ...)
+	object[func](object, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	layoutrecursionblock = nil
 end
 
@@ -703,7 +678,7 @@ AceGUI:RegisterLayout("Flow",
 		local frameoffset
 		local lastframeoffset
 		local oversize 
-		for i = 1, #children do
+		for i = 1, tgetn(children) do
 			local child = children[i]
 			oversize = nil
 			local frame = child.frame

@@ -20,7 +20,7 @@ Support functions
 
 if not AceGUIMultiLineEditBoxInsertLink then
 	-- upgradeable hook
-	hooksecurefunc("ChatEdit_InsertLink", function(...) return _G.AceGUIMultiLineEditBoxInsertLink(...) end)
+	hooksecurefunc("ChatEdit_InsertLink", function(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10) return _G.AceGUIMultiLineEditBoxInsertLink(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10) end)
 end
 
 function _G.AceGUIMultiLineEditBoxInsertLink(text)
@@ -254,8 +254,8 @@ local methods = {
 		return self.editBox:GetCursorPosition()
 	end,
 	
-	["SetCursorPosition"] = function(self, ...)
-		return self.editBox:SetCursorPosition(...)
+	["SetCursorPosition"] = function(self, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+		return self.editBox:SetCursorPosition(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	end,
 	
 	

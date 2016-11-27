@@ -119,13 +119,18 @@ local serializeTbl = { "^1" }	-- "^1" = Hi, I'm data serialized by AceSerializer
 -- May throw errors on invalid data types.
 -- @param ... List of values to serialize
 -- @return The data in its serialized form (string)
-function AceSerializer:Serialize(...)
+function AceSerializer:Serialize(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	local nres = 1
-	
-	for i=1,select("#", ...) do
-		local v = select(i, ...)
-		nres = SerializeValue(v, serializeTbl, nres)
-	end
+	if a1 then nres = SerializeValue(a1, serializeTbl, nres) end
+	if a2 then nres = SerializeValue(a2, serializeTbl, nres) end
+	if a3 then nres = SerializeValue(a3, serializeTbl, nres) end
+	if a4 then nres = SerializeValue(a4, serializeTbl, nres) end
+	if a5 then nres = SerializeValue(a5, serializeTbl, nres) end
+	if a6 then nres = SerializeValue(a6, serializeTbl, nres) end
+	if a7 then nres = SerializeValue(a7, serializeTbl, nres) end
+	if a8 then nres = SerializeValue(a8, serializeTbl, nres) end
+	if a9 then nres = SerializeValue(a9, serializeTbl, nres) end
+	if a10 then nres = SerializeValue(a10, serializeTbl, nres) end
 	
 	serializeTbl[nres+1] = "^^"	-- "^^" = End of serialized data
 	

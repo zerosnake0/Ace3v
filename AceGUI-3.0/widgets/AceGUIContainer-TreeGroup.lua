@@ -6,12 +6,12 @@ local Type, Version = "TreeGroup", 40
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then return end
 
-local IsLegion = select(4, GetBuildInfo()) >= 70000
+local IsLegion = false
 
 -- Lua APIs
 local next, pairs, ipairs, assert, type = next, pairs, ipairs, assert, type
 local math_min, math_max, floor = math.min, math.max, floor
-local select, tremove, unpack, tconcat = select, table.remove, unpack, table.concat
+local tgetn, tremove, unpack, tconcat = table.getn, table.remove, unpack, table.concat
 
 -- WoW APIs
 local CreateFrame, UIParent = CreateFrame, UIParent
@@ -156,7 +156,7 @@ local function addLine(self, v, tree, level, parent)
 	else
 		line.hasChildren = nil
 	end
-	self.lines[#self.lines+1] = line
+	tinsert(self.lines, line)
 	return line
 end
 
@@ -167,13 +167,22 @@ local function FirstFrameUpdate(frame)
 	self:RefreshTree()
 end
 
-local function BuildUniqueValue(...)
-	local n = select('#', ...)
-	if n == 1 then
-		return ...
-	else
-		return (...).."\001"..BuildUniqueValue(select(2,...))
-	end
+local BuildUniqueValue
+do
+local args = {nil,nil,nil,nil,nil,nil,nil,nil,nil,nil}
+function BuildUniqueValue(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+	args[1] = a1
+	args[2] = a2
+	args[3] = a3
+	args[4] = a4
+	args[5] = a5
+	args[6] = a6
+	args[7] = a7
+	args[8] = a8
+	args[9] = a9
+	args[10] = a10
+	return tconcat(tmp, "\001", 1, tgetn(args))
+end
 end
 
 --[[-----------------------------------------------------------------------------
@@ -293,7 +302,10 @@ end
 --[[-----------------------------------------------------------------------------
 Methods
 -------------------------------------------------------------------------------]]
-local methods = {
+local methods
+do
+local select_args = {nil,nil,nil,nil,nil,nil,nil,nil,nil,nil}
+methods = {
 	["OnAcquire"] = function(self)
 		self:SetTreeWidth(DEFAULT_TREE_WIDTH, DEFAULT_TREE_SIZABLE)
 		self:EnableButtonTooltips(true)
@@ -417,7 +429,7 @@ local methods = {
 
 		self:BuildLevel(tree, 1)
 
-		local numlines = #lines
+		local numlines = tgetn(lines)
 
 		local maxlines = (floor(((self.treeframe:GetHeight()or 0) - 20 ) / 18))
 		if maxlines <= 0 then return end
@@ -510,21 +522,30 @@ local methods = {
 		end
 	end,
 
-	["Select"] = function(self, uniquevalue, ...)
+	["Select"] = function(self, uniquevalue, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 		self.filter = false
 		local status = self.status or self.localstatus
 		local groups = status.groups
-		local path = {...}
-		for i = 1, #path do
-			groups[tconcat(path, "\001", 1, i)] = true
+		select_args[1] = a1
+		select_args[2] = a2
+		select_args[3] = a3
+		select_args[4] = a4
+		select_args[5] = a5
+		select_args[6] = a6
+		select_args[7] = a7
+		select_args[8] = a8
+		select_args[9] = a9
+		select_args[10] = a10
+		for i = 1, tgetn(select_args) do
+			groups[tconcat(select_args, "\001", 1, i)] = true
 		end
 		status.selected = uniquevalue
 		self:RefreshTree(true)
 		self:Fire("OnGroupSelected", uniquevalue)
 	end,
 
-	["SelectByPath"] = function(self, ...)
-		self:Select(BuildUniqueValue(...), ...)
+	["SelectByPath"] = function(self, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+		self:Select(BuildUniqueValue(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10), a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	end,
 
 	["SelectByValue"] = function(self, uniquevalue)
@@ -612,6 +633,7 @@ local methods = {
 		self:SetHeight((height or 0) + 20)
 	end
 }
+end -- method
 
 --[[-----------------------------------------------------------------------------
 Constructor

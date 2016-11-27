@@ -16,10 +16,10 @@ local PlaySound, CreateFrame, UIParent = PlaySound, CreateFrame, UIParent
 --[[-----------------------------------------------------------------------------
 Scripts
 -------------------------------------------------------------------------------]]
-local function Button_OnClick(frame, ...)
+local function Button_OnClick(frame, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	AceGUI:ClearFocus()
 	PlaySound("igMainMenuOption")
-	frame.obj:Fire("OnClick", ...)
+	frame.obj:Fire("OnClick", a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 end
 
 local function Control_OnEnter(frame)

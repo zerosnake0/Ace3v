@@ -25,20 +25,22 @@ AceTimer.activeTimers = AceTimer.activeTimers or {} -- Active timer list
 local activeTimers = AceTimer.activeTimers -- Upvalue our private data
 
 -- Lua APIs
-local type, unpack, next, error, select = type, unpack, next, error, select
+local type, unpack, next, error = type, unpack, next, error
 -- WoW APIs
-local GetTime, C_TimerAfter = GetTime, C_Timer.After
+local GetTime = GetTime
+-- TODO
+local C_TimerAfter = function () error("C_TimerAfter not available") end
 
 local function new(self, loop, func, delay, ...)
 	if delay < 0.01 then
 		delay = 0.01 -- Restrict to the lowest time that the C_Timer API allows us
 	end
 
-	local timer = {...}
+	local timer = arg
+	timer.argsCount = tgetn(arg)
 	timer.object = self
 	timer.func = func
 	timer.looping = loop
-	timer.argsCount = select("#", ...)
 	timer.delay = delay
 	timer.ends = GetTime() + delay
 
@@ -89,7 +91,7 @@ end
 -- function MyAddOn:TimerFeedback()
 --   print("5 seconds passed")
 -- end
-function AceTimer:ScheduleTimer(func, delay, ...)
+function AceTimer:ScheduleTimer(func, delay, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	if not func or not delay then
 		error(MAJOR..": ScheduleTimer(callback, delay, args...): 'callback' and 'delay' must have set values.", 2)
 	end
@@ -100,7 +102,7 @@ function AceTimer:ScheduleTimer(func, delay, ...)
 			error(MAJOR..": ScheduleTimer(callback, delay, args...): Tried to register '"..func.."' as the callback, but it doesn't exist in the module.", 2)
 		end
 	end
-	return new(self, nil, func, delay, ...)
+	return new(self, nil, func, delay, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 end
 
 --- Schedule a repeating timer.
@@ -124,7 +126,7 @@ end
 --     self:CancelTimer(self.testTimer)
 --   end
 -- end
-function AceTimer:ScheduleRepeatingTimer(func, delay, ...)
+function AceTimer:ScheduleRepeatingTimer(func, delay, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	if not func or not delay then
 		error(MAJOR..": ScheduleRepeatingTimer(callback, delay, args...): 'callback' and 'delay' must have set values.", 2)
 	end
@@ -135,7 +137,7 @@ function AceTimer:ScheduleRepeatingTimer(func, delay, ...)
 			error(MAJOR..": ScheduleRepeatingTimer(callback, delay, args...): Tried to register '"..func.."' as the callback, but it doesn't exist in the module.", 2)
 		end
 	end
-	return new(self, true, func, delay, ...)
+	return new(self, true, func, delay, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 end
 
 --- Cancels a timer with the given id, registered by the same addon object as used for `:ScheduleTimer`

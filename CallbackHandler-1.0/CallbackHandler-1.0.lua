@@ -7,55 +7,17 @@ if not CallbackHandler then return end -- No upgrade needed
 local meta = {__index = function(tbl, key) tbl[key] = {} return tbl[key] end}
 
 -- Lua APIs
-local tconcat = table.concat
+local tconcat, tinsert, tgetn = table.concat, table.insert, table.getn
 local assert, error, loadstring = assert, error, loadstring
 local setmetatable, rawset, rawget = setmetatable, rawset, rawget
-local next, select, pairs, type, tostring = next, select, pairs, type, tostring
+local next, pairs, type, tostring = next, pairs, type, tostring
 
 -- Global vars/functions that we don't upvalue since they might get hooked, or upgraded
 -- List them here for Mikk's FindGlobals script
 -- GLOBALS: geterrorhandler
 
 local xpcall = xpcall
-
-local function errorhandler(err)
-	return geterrorhandler()(err)
-end
-
-local function CreateDispatcher(argCount)
-	local code = [[
-	local next, xpcall, eh = ...
-
-	local method, ARGS
-	local function call() method(ARGS) end
-
-	local function dispatch(handlers, ...)
-		local index
-		index, method = next(handlers)
-		if not method then return end
-		local OLD_ARGS = ARGS
-		ARGS = ...
-		repeat
-			xpcall(call, eh)
-			index, method = next(handlers, index)
-		until not method
-		ARGS = OLD_ARGS
-	end
-
-	return dispatch
-	]]
-
-	local ARGS, OLD_ARGS = {}, {}
-	for i = 1, argCount do ARGS[i], OLD_ARGS[i] = "arg"..i, "old_arg"..i end
-	code = code:gsub("OLD_ARGS", tconcat(OLD_ARGS, ", ")):gsub("ARGS", tconcat(ARGS, ", "))
-	return assert(loadstring(code, "safecall Dispatcher["..argCount.."]"))(next, xpcall, errorhandler)
-end
-
-local Dispatchers = setmetatable({}, {__index=function(self, argCount)
-	local dispatcher = CreateDispatcher(argCount)
-	rawset(self, argCount, dispatcher)
-	return dispatcher
-end})
+local errorhandler = errorhandler
 
 --------------------------------------------------------------------------
 -- CallbackHandler:New
@@ -64,7 +26,9 @@ end})
 --   RegisterName      - name of the callback registration API, default "RegisterCallback"
 --   UnregisterName    - name of the callback unregistration API, default "UnregisterCallback"
 --   UnregisterAllName - name of the API to unregister all callbacks, default "UnregisterAllCallbacks". false == don't publish this API.
-
+do
+local method, args
+local function call() return method(unpack(args)) end
 function CallbackHandler:New(target, RegisterName, UnregisterName, UnregisterAllName)
 
 	RegisterName = RegisterName or "RegisterCallback"
@@ -87,7 +51,17 @@ function CallbackHandler:New(target, RegisterName, UnregisterName, UnregisterAll
 		local oldrecurse = registry.recurse
 		registry.recurse = oldrecurse + 1
 
-		Dispatchers[select('#', ...) + 1](events[eventname], eventname, ...)
+		-- Ace3v: we do not use dispatch trick in vanilla
+		args = arg
+		local handlers = events[eventname]
+		local index
+		index, method = next(handlers)
+		if method then
+			repeat
+				xpcall(call, errorhandler)
+				index, method = next(handlers, index)
+			until not method
+		end
 
 		registry.recurse = oldrecurse
 
@@ -113,7 +87,7 @@ function CallbackHandler:New(target, RegisterName, UnregisterName, UnregisterAll
 	--   self with function ref, leads to functionref(...)
 	--   "addonId" (instead of self) with function ref, leads to functionref(...)
 	-- all with an optional arg, which, if present, gets passed as first argument (after self if present)
-	target[RegisterName] = function(self, eventname, method, ... --[[actually just a single arg]])
+	target[RegisterName] = function(self, eventname, method, ...)
 		if type(eventname) ~= "string" then
 			error("Usage: "..RegisterName.."(eventname, method[, arg]): 'eventname' - string expected.", 2)
 		end
@@ -123,36 +97,35 @@ function CallbackHandler:New(target, RegisterName, UnregisterName, UnregisterAll
 		local first = not rawget(events, eventname) or not next(events[eventname])	-- test for empty before. not test for one member after. that one member may have been overwritten.
 
 		if type(method) ~= "string" and type(method) ~= "function" then
-			error("Usage: "..RegisterName.."(\"eventname\", \"methodname\"): 'methodname' - string or function expected.", 2)
+			error("Usage: "..RegisterName.."(eventname, method[, arg]): 'method' - string or function expected.", 2)
 		end
 
 		local regfunc
+		local a1 = arg[1]
 
 		if type(method) == "string" then
 			-- self["method"] calling style
 			if type(self) ~= "table" then
-				error("Usage: "..RegisterName.."(\"eventname\", \"methodname\"): self was not a table?", 2)
+				error("Usage: "..RegisterName.."(eventname, method[, arg]): self was not a table?", 2)
 			elseif self==target then
-				error("Usage: "..RegisterName.."(\"eventname\", \"methodname\"): do not use Library:"..RegisterName.."(), use your own 'self'", 2)
+				error("Usage: "..RegisterName.."(eventname, method[, arg]): do not use Library:"..RegisterName.."(), use your own 'self'.", 2)
 			elseif type(self[method]) ~= "function" then
-				error("Usage: "..RegisterName.."(\"eventname\", \"methodname\"): 'methodname' - method '"..tostring(method).."' not found on self.", 2)
+				error("Usage: "..RegisterName.."(eventname, method[, arg]): 'method' - method '"..tostring(method).."' not found on 'self'.", 2)
 			end
 
-			if select("#",...)>=1 then	-- this is not the same as testing for arg==nil!
-				local arg=select(1,...)
-				regfunc = function(...) self[method](self,arg,...) end
+			if tgetn(arg) >= 1 then
+				regfunc = function (...) return self[method](self,a1,unpack(arg)) end
 			else
-				regfunc = function(...) self[method](self,...) end
+				regfunc = function (...) return self[method](self,unpack(arg)) end
 			end
 		else
-			-- function ref with self=object or self="addonId" or self=thread
-			if type(self)~="table" and type(self)~="string" and type(self)~="thread" then
-				error("Usage: "..RegisterName.."(self or \"addonId\", eventname, method): 'self or addonId': table or string or thread expected.", 2)
+			-- function ref with self=object or self="addonId"
+			if type(self)~="table" and type(self)~="string" then
+				error("Usage: "..RegisterName.."(self or addonId, eventname, method[, arg]): 'self or addonId': table or string expected.", 2)
 			end
 
-			if select("#",...)>=1 then	-- this is not the same as testing for arg==nil!
-				local arg=select(1,...)
-				regfunc = function(...) method(arg,...) end
+			if tgetn(arg) >= 1 then
+				regfunc = function (...) return method(a1, unpack(arg)) end
 			else
 				regfunc = method
 			end
@@ -198,16 +171,16 @@ function CallbackHandler:New(target, RegisterName, UnregisterName, UnregisterAll
 	-- OPTIONAL: Unregister all callbacks for given selfs/addonIds
 	if UnregisterAllName then
 		target[UnregisterAllName] = function(...)
-			if select("#",...)<1 then
+			local l = tgetn(arg)
+			if l == 0 then
 				error("Usage: "..UnregisterAllName.."([whatFor]): missing 'self' or \"addonId\" to unregister events for.", 2)
 			end
-			if select("#",...)==1 and ...==target then
+			if arg[i]==target then
 				error("Usage: "..UnregisterAllName.."([whatFor]): supply a meaningful 'self' or \"addonId\"", 2)
 			end
 
-
-			for i=1,select("#",...) do
-				local self = select(i,...)
+			for i=1,l do
+				local self = arg[i]
 				if registry.insertQueue then
 					for eventname, callbacks in pairs(registry.insertQueue) do
 						if callbacks[self] then
@@ -230,7 +203,7 @@ function CallbackHandler:New(target, RegisterName, UnregisterName, UnregisterAll
 
 	return registry
 end
-
+end -- CallbackHandler:New
 
 -- CallbackHandler purposefully does NOT do explicit embedding. Nor does it
 -- try to upgrade old implicit embeds since the system is selfcontained and

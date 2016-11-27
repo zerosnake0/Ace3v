@@ -2,7 +2,7 @@
 -- You can register slash commands to your custom functions and use the `GetArgs` function to parse them
 -- to your addons individual needs.
 --
--- **AceConsole-3.0** can be embeded into your addon, either explicitly by calling AceConsole:Embed(MyAddon) or by 
+-- **AceConsole-3.0** can be embeded into your addon, either explicitly by calling AceConsole:Embed(MyAddon) or by
 -- specifying it as an embeded library in your AceAddon. All functions will be available on your addon object
 -- and can be accessed directly, without having to explicitly call AceConsole itself.\\
 -- It is recommended to embed AceConsole, otherwise you'll have to specify a custom `self` on all calls you
@@ -21,10 +21,12 @@ AceConsole.commands = AceConsole.commands or {} -- table containing commands reg
 AceConsole.weakcommands = AceConsole.weakcommands or {} -- table containing self, command => func references for weak commands that don't persist through enable/disable
 
 -- Lua APIs
-local tconcat, tostring, select = table.concat, tostring, select
+local tinsert, tconcat, tgetn = table.insert, table.concat, table.getn
+local tostring = tostring
 local type, pairs, error = type, pairs, error
 local format, strfind, strsub = string.format, string.find, string.sub
 local max = math.max
+local strupper, strlower = string.upper, string.lower
 
 -- WoW APIs
 local _G = _G
@@ -32,19 +34,17 @@ local _G = _G
 -- Global vars/functions that we don't upvalue since they might get hooked, or upgraded
 -- List them here for Mikk's FindGlobals script
 -- GLOBALS: DEFAULT_CHAT_FRAME, SlashCmdList, hash_SlashCmdList
-
-local tmp={}
-local function Print(self,frame,...)
-	local n=0
+local tmp = {}
+local function Print(self, frame, ...)
+	local b, e = 0, tgetn(arg)
 	if self ~= AceConsole then
-		n=n+1
-		tmp[n] = "|cff33ff99"..tostring( self ).."|r:"
+		b = 1
+		tmp[1] = "|cff33ff99"..tostring(self).."|r:"
 	end
-	for i=1, select("#", ...) do
-		n=n+1
-		tmp[n] = tostring(select(i, ...))
+	for i=1,e do
+		tmp[b+i] = tostring(arg[i])
 	end
-	frame:AddMessage( tconcat(tmp," ",1,n) )
+	frame:AddMessage(tconcat(tmp," ",1,e+b)) -- explicitly
 end
 
 --- Print to DEFAULT_CHAT_FRAME or given ChatFrame (anything with an .AddMessage function)
@@ -52,28 +52,30 @@ end
 -- @param chatframe Custom ChatFrame to print to (or any frame with an .AddMessage function)
 -- @param ... List of any values to be printed
 function AceConsole:Print(...)
-	local frame = ...
+	local frame = arg[1]
 	if type(frame) == "table" and frame.AddMessage then	-- Is first argument something with an .AddMessage member?
-		return Print(self, frame, select(2,...))
+		return Print(self, unpack(arg))
 	else
-		return Print(self, DEFAULT_CHAT_FRAME, ...)
+		return Print(self, DEFAULT_CHAT_FRAME, unpack(arg))
 	end
 end
-
 
 --- Formatted (using format()) print to DEFAULT_CHAT_FRAME or given ChatFrame (anything with an .AddMessage function)
 -- @paramsig [chatframe ,] "format"[, ...]
 -- @param chatframe Custom ChatFrame to print to (or any frame with an .AddMessage function)
 -- @param format Format string - same syntax as standard Lua format()
 -- @param ... Arguments to the format string
-function AceConsole:Printf(...)
-	local frame = ...
-	if type(frame) == "table" and frame.AddMessage then	-- Is first argument something with an .AddMessage member?
-		return Print(self, frame, format(select(2,...)))
+function AceConsole:Printf(a1, ...)
+	local frame, succ, s
+	if type(a1) == "table" and a1.AddMessage then	-- Is first argument something with an .AddMessage member?
+		frame, succ, s = a1, pcall(format, unpack(arg))
 	else
-		return Print(self, DEFAULT_CHAT_FRAME, format(...))
+		frame, succ, s = DEFAULT_CHAT_FRAME, pcall(format, a1, unpack(arg))
 	end
+	if not succ then error(s,2) end
+	return Print(self, frame, s)
 end
+
 
 
 
@@ -84,11 +86,11 @@ end
 -- @param persist if false, the command will be soft disabled/enabled when aceconsole is used as a mixin (default: true)
 function AceConsole:RegisterChatCommand( command, func, persist )
 	if type(command)~="string" then error([[Usage: AceConsole:RegisterChatCommand( "command", func[, persist ]): 'command' - expected a string]], 2) end
-	
+
 	if persist==nil then persist=true end	-- I'd rather have my addon's "/addon enable" around if the author screws up. Having some extra slash regged when it shouldnt be isn't as destructive. True is a better default. /Mikk
-	
-	local name = "ACECONSOLE_"..command:upper()
-	
+
+	local name = "ACECONSOLE_"..strupper(command)
+
 	if type( func ) == "string" then
 		SlashCmdList[name] = function(input, editBox)
 			self[func](self, input, editBox)
@@ -96,7 +98,7 @@ function AceConsole:RegisterChatCommand( command, func, persist )
 	else
 		SlashCmdList[name] = func
 	end
-	_G["SLASH_"..name.."1"] = "/"..command:lower()
+	_G["SLASH_"..name.."1"] = "/"..strlower(command)
 	AceConsole.commands[command] = name
 	-- non-persisting commands are registered for enabling disabling
 	if not persist then
@@ -113,7 +115,6 @@ function AceConsole:UnregisterChatCommand( command )
 	if name then
 		SlashCmdList[name] = nil
 		_G["SLASH_" .. name .. "1"] = nil
-		hash_SlashCmdList["/" .. command:upper()] = nil
 		AceConsole.commands[command] = nil
 	end
 end
@@ -122,19 +123,21 @@ end
 -- @return Iterator (pairs) over all commands
 function AceConsole:IterateChatCommands() return pairs(AceConsole.commands) end
 
-
-local function nils(n, ...)
+local function _nils(n, arg)
 	if n>1 then
-		return nil, nils(n-1, ...)
+		return nil, _nils(n, arg)
 	elseif n==1 then
-		return nil, ...
+		return nil, unpack(arg)
 	else
-		return ...
+		return unpack(arg)
 	end
 end
-	
 
---- Retreive one or more space-separated arguments from a string. 
+local function nils(n, ...)
+	return _nils(n, arg)
+end
+
+--- Retreive one or more space-separated arguments from a string.
 -- Treats quoted strings and itemlinks as non-spaced.
 -- @param str The raw argument string
 -- @param numargs How many arguments to get (default 1)
@@ -144,7 +147,7 @@ end
 function AceConsole:GetArgs(str, numargs, startpos)
 	numargs = numargs or 1
 	startpos = max(startpos or 1, 1)
-	
+
 	local pos=startpos
 
 	-- find start of new arg
@@ -169,24 +172,24 @@ function AceConsole:GetArgs(str, numargs, startpos)
 	else
 		delim_or_pipe="([| ])"
 	end
-	
+
 	startpos = pos
-	
+
 	while true do
 		-- find delimiter or hyperlink
 		local ch,_
 		pos,_,ch = strfind(str, delim_or_pipe, pos)
-		
+
 		if not pos then break end
-		
+
 		if ch=="|" then
 			-- some kind of escape
-			
+
 			if strsub(str,pos,pos+1)=="|H" then
 				-- It's a |H....|hhyper link!|h
 				pos=strfind(str, "|h", pos+2)	-- first |h
 				if not pos then break end
-				
+
 				pos=strfind(str, "|h", pos+2)	-- second |h
 				if not pos then break end
 			elseif strsub(str,pos, pos+1) == "|T" then
@@ -194,16 +197,16 @@ function AceConsole:GetArgs(str, numargs, startpos)
 				pos=strfind(str, "|t", pos+2)
 				if not pos then break end
 			end
-			
+
 			pos=pos+2 -- skip past this escape (last |h if it was a hyperlink)
-		
+
 		else
 			-- found delimiter, done with this arg
 			return strsub(str, startpos, pos-1), AceConsole:GetArgs(str, numargs-1, pos+1)
 		end
-		
+
 	end
-	
+
 	-- search aborted, we hit end of string. return it all as one argument. (yes, even if it's an unterminated quote or hyperlink)
 	return strsub(str, startpos), nils(numargs-1, 1e9)
 end
@@ -214,10 +217,10 @@ end
 local mixins = {
 	"Print",
 	"Printf",
-	"RegisterChatCommand", 
+	"RegisterChatCommand",
 	"UnregisterChatCommand",
 	"GetArgs",
-} 
+}
 
 -- Embeds AceConsole into the target object making the functions from the mixins list available on target:..
 -- @param target target object to embed AceBucket in

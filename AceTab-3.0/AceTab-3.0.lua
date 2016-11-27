@@ -17,6 +17,7 @@ local pairs = pairs
 local ipairs = ipairs
 local type = type
 local registry = AceTab.registry
+local tgetn = table.getn
 
 local strfind = string.find
 local strsub = string.sub
@@ -24,8 +25,8 @@ local strlower = string.lower
 local strformat = string.format
 local strmatch = string.match
 
-local function printf(...)
-	DEFAULT_CHAT_FRAME:AddMessage(strformat(...))
+local function printf(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+	DEFAULT_CHAT_FRAME:AddMessage(strformat(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10))
 end
 
 local function getTextBeforeCursor(this, start)
@@ -38,9 +39,9 @@ local function hookFrame(f)
 	f.hookedByAceTab3 = true
 	if f == ChatEdit_GetActiveWindow() then
 		local origCTP = ChatEdit_CustomTabPressed
-		function ChatEdit_CustomTabPressed(...)
+		function ChatEdit_CustomTabPressed(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 			if AceTab:OnTabPressed(f) then
-				return origCTP(...)
+				return origCTP(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 			else
 				return true
 			end
@@ -50,9 +51,9 @@ local function hookFrame(f)
 		if type(origOTP) ~= 'function' then
 			origOTP = function() end
 		end
-		f:SetScript('OnTabPressed', function(...)
+		f:SetScript('OnTabPressed', function(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 			if AceTab:OnTabPressed(f) then
-				return origOTP(...)
+				return origOTP(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 			end
 		end)
 	end
@@ -179,7 +180,7 @@ local function gcbs(s1, s2)
 	if not s1 and not s2 then return end
 	if not s1 then s1 = s2 end
 	if not s2 then s2 = s1 end
-	if #s2 < #s1 then
+	if tgetn(s2) < tgetn(s1) then
 		s1, s2 = s2, s1
 	end
 	if strfind(strlower(s2), "^"..strlower(s1)) then
@@ -280,7 +281,7 @@ local function fillMatches(this, desc, fallback)
 					text_pmendToCursor = strsub(text_precursor, prematchEnd + 1)
 
 					-- How many characters should we eliminate before the completion before writing it in.
-					pmolengths[desc] = entry.pmoverwrite == true and #text_prematch or entry.pmoverwrite or 0
+					pmolengths[desc] = entry.pmoverwrite == true and tgetn(text_prematch) or entry.pmoverwrite or 0
 
 					-- This is where we will insert completions, taking the prematch overwrite into account.
 					this.at3matchStart = prematchEnd + 1 - (pmolengths[desc] or 0)

@@ -6,7 +6,7 @@ local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then return end
 
 -- Lua APIs
-local select, pairs, print = select, pairs, print
+local pairs, print = pairs, print
 
 -- WoW APIs
 local CreateFrame, UIParent = CreateFrame, UIParent
@@ -53,14 +53,13 @@ local methods = {
 		end
 	end,
 
-	["SetImage"] = function(self, path, ...)
+	["SetImage"] = function(self, path, a1,a2,a3,a4,a5,a6,a7,a8)
 		local image = self.image
 		image:SetTexture(path)
 		
 		if image:GetTexture() then
-			local n = select("#", ...)
-			if n == 4 or n == 8 then
-				image:SetTexCoord(...)
+			if a4 or a8 then
+				image:SetTexCoord(a1,a2,a3,a4,a5,a6,a7,a8)
 			else
 				image:SetTexCoord(0, 1, 0, 1)
 			end
@@ -132,7 +131,7 @@ local function Constructor()
 		widget[method] = func
 	end
 
-	widget.SetText = function(self, ...) print("AceGUI-3.0-Icon: SetText is deprecated! Use SetLabel instead!"); self:SetLabel(...) end
+	widget.SetText = function(self,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10) print("AceGUI-3.0-Icon: SetText is deprecated! Use SetLabel instead!"); self:SetLabel(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10) end
 
 	return AceGUI:RegisterAsWidget(widget)
 end

@@ -1,12 +1,13 @@
-## Interface: 70000
+## Interface: 11200
 
-## Title: Lib: Ace3
+## Title: Ace3
 ## Notes: AddOn development framework
 ## Author: Ace3 Development Team
 ## X-Website: http://www.wowace.com
 ## X-Category: Library
 ## X-License: Limited BSD
 
+Core\Core.lua
 LibStub\LibStub.lua
 CallbackHandler-1.0\CallbackHandler-1.0.xml
 AceAddon-3.0\AceAddon-3.0.xml

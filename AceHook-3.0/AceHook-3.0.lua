@@ -36,7 +36,8 @@ local format = string.format
 local assert, error = assert, error
 
 -- WoW APIs
-local issecurevariable, hooksecurefunc = issecurevariable, hooksecurefunc
+local hooksecurefunc, issecurevariable = hooksecurefunc, issecurevariable
+
 local _G = _G
 
 -- functions for later definition
@@ -84,28 +85,28 @@ function createHook(self, handler, orig, secure, failsafe)
 	local method = type(handler) == "string"
 	if failsafe and not secure then
 		-- failsafe hook creation
-		uid = function(...)
+		uid = function(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 			if actives[uid] then
 				if method then
-					self[handler](self, ...)
+					self[handler](self,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 				else
-					handler(...)
+					handler(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 				end
 			end
-			return orig(...)
+			return orig(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 		end
 		-- /failsafe hook
 	else
 		-- all other hooks
-		uid = function(...)
+		uid = function(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 			if actives[uid] then
 				if method then
-					return self[handler](self, ...)
+					return self[handler](self,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 				else
-					return handler(...)
+					return handler(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 				end
 			elseif not secure then -- backup on non secure
-				return orig(...)
+				return orig(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 			end
 		end
 		-- /hook

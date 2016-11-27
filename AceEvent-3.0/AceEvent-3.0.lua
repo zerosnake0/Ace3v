@@ -116,8 +116,8 @@ end
 
 -- Script to fire blizzard events into the event listeners
 local events = AceEvent.events
-AceEvent.frame:SetScript("OnEvent", function(this, event, ...)
-	events:Fire(event, ...)
+AceEvent.frame:SetScript("OnEvent", function(this, event, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+	events:Fire(event, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 end)
 
 --- Finally: upgrade our old embeds

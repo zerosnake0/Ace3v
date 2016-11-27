@@ -2,35 +2,52 @@
 
 local AceGUI = LibStub("AceGUI-3.0")
 
-local IsLegion = select(4, GetBuildInfo()) >= 70000
+local IsLegion = false
 
 -- Lua APIs
-local select, assert = select, assert
+local assert = assert
+local tgetn = table.getn
 
 -- WoW APIs
 local PlaySound = PlaySound
 local CreateFrame = CreateFrame
 
-local function fixlevels(parent,...)
-	local i = 1
-	local child = select(i, ...)
-	while child do
-		child:SetFrameLevel(parent:GetFrameLevel()+1)
-		fixlevels(child, child:GetChildren())
-		i = i + 1
-		child = select(i, ...)
-	end
+-- Ace3v: attention! this function is recursive
+local fixlevels
+do
+local function _fixlevels(child, lv)
+	child:SetFrameLevel(lv)
+	fixlevels(child, child:GetChildren())
 end
 
-local function fixstrata(strata, parent, ...)
-	local i = 1
-	local child = select(i, ...)
+function fixlevels(parent,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+	local lv = parent:GetFrameLevel()+1
+	if a1 then _fixlevels(a1,v) else return end
+	if a2 then _fixlevels(a2,v) else return end
+	if a3 then _fixlevels(a3,v) else return end
+	if a4 then _fixlevels(a4,v) else return end
+	if a5 then _fixlevels(a5,v) else return end
+	if a6 then _fixlevels(a6,v) else return end
+	if a7 then _fixlevels(a7,v) else return end
+	if a8 then _fixlevels(a8,v) else return end
+	if a9 then _fixlevels(a9,v) else return end
+	if a10 then _fixlevels(a10,v) else return end
+end
+end -- fixlevels
+
+-- Ace3v: attention! this function is recursive
+local function fixstrata(strata, parent, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	parent:SetFrameStrata(strata)
-	while child do
-		fixstrata(strata, child, child:GetChildren())
-		i = i + 1
-		child = select(i, ...)
-	end
+	if a1 then fixstrata(strata,a1,a1:GetChildren()) else return end
+	if a2 then fixstrata(strata,a2,a2:GetChildren()) else return end
+	if a3 then fixstrata(strata,a3,a3:GetChildren()) else return end
+	if a4 then fixstrata(strata,a4,a4:GetChildren()) else return end
+	if a5 then fixstrata(strata,a5,a5:GetChildren()) else return end
+	if a6 then fixstrata(strata,a6,a6:GetChildren()) else return end
+	if a7 then fixstrata(strata,a7,a7:GetChildren()) else return end
+	if a8 then fixstrata(strata,a8,a8:GetChildren()) else return end
+	if a9 then fixstrata(strata,a9,a9:GetChildren()) else return end
+	if a10 then fixstrata(strata,a10,a10:GetChildren()) else return end
 end
 
 -- ItemBase is the base "class" for all dropdown items.
@@ -109,8 +126,8 @@ function ItemBase.GetText(self)
 end
 
 -- exported
-function ItemBase.SetPoint(self, ...)
-	self.frame:SetPoint(...)
+function ItemBase.SetPoint(self, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+	self.frame:SetPoint(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 end
 
 -- exported
