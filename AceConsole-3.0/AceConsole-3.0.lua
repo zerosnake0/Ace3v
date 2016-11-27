@@ -94,12 +94,16 @@ function AceConsole:RegisterChatCommand( command, func, persist )
 
 	local name = "ACECONSOLE_"..strupper(command)
 
-	if type( func ) == "string" then
+	local t = type(func)
+
+	if t  == "string" then
 		SlashCmdList[name] = function(input, editBox)
 			self[func](self, input, editBox)
 		end
-	else
+	elseif t == "function" then
 		SlashCmdList[name] = func
+	else
+		error([[Usage: AceConsole:RegisterChatCommand( "command", func[, persist ]): 'func' - expected a string or a function]], 2)
 	end
 	_G["SLASH_"..name.."1"] = "/"..strlower(command)
 	AceConsole.commands[command] = name

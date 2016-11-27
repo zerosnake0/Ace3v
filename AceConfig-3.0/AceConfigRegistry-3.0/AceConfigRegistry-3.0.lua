@@ -40,7 +40,7 @@ AceConfigRegistry.validated = {
 	dialog = {},
 }
 
-local function err(msg, errlvl, arg)
+local function err(msg, errlvl, ...)
 	local l = tgetn(arg)
 	local i,j = 1,l
 	while i < j do

@@ -85,7 +85,7 @@ end
 
 -- callmethod() - call a given named method (e.g. "get", "set") with given arguments
 
-local function callmethod(info, inputpos, tab, methodtype, arg)
+local function callmethod(info, inputpos, tab, methodtype, ...)
 	local method = info[methodtype]
 	if not method then
 		err(info, inputpos, "'"..methodtype.."': not set")
@@ -96,20 +96,12 @@ local function callmethod(info, inputpos, tab, methodtype, arg)
 	info.type = tab.type
 
 	if type(method)=="function" then
-		if arg then
-			return method(info, unpack(arg))
-		else
-			return method(info)
-		end
+		return method(info, unpack(arg))
 	elseif type(method)=="string" then
 		if type(info.handler[method])~="function" then
 			err(info, inputpos, "'"..methodtype.."': '"..method.."' is not a member function of "..tostring(info.handler))
 		end
-		if arg then
-			return info.handler[method](info.handler, info, unpack(arg))
-		else
-			return info.handler[method](info.handler, info)
-		end
+		return info.handler[method](info.handler, info, unpack(arg))
 	else
 		assert(false)	-- type should have already been checked on read
 	end
@@ -139,7 +131,7 @@ end
 
 local function do_final(info, inputpos, tab, methodtype, ...)
 	if info.validate then
-		local res = callmethod(info,inputpos,tab,"validate",arg)
+		local res = callmethod(info,inputpos,tab,"validate",unpack(arg))
 		if type(res)=="string" then
 			usererr(info, inputpos, "'"..strsub(info.input, inputpos).."' - "..res)
 			return
@@ -147,7 +139,7 @@ local function do_final(info, inputpos, tab, methodtype, ...)
 	end
 	-- console ignores .confirm
 
-	callmethod(info,inputpos,tab,methodtype,arg)
+	callmethod(info,inputpos,tab,methodtype,unpack(arg))
 end
 
 
