@@ -23,7 +23,6 @@ local strfind = string.find
 local strsub = string.sub
 local strlower = string.lower
 local strformat = string.format
-local strmatch = string.match
 
 local function printf(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	DEFAULT_CHAT_FRAME:AddMessage(strformat(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10))
@@ -327,7 +326,7 @@ function AceTab:OnTabPressed(this)
 		if strfind(command, "^/[%a%d_]+$") then
 			return true
 		end
-		local cmd = strmatch(command, "^/[%a%d_]+")
+		local _,_,cmd = strfind(command, "^/[%a%d_]+")
 		if cmd and IsSecureCmd(cmd) then
 			return true
 		end

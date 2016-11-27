@@ -271,9 +271,9 @@ do
 		end
 	end
 	
-	WidgetBase.Fire = function(self, name, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+	WidgetBase.Fire = function(self, name, ...)
 		if self.events[name] then
-			local success, ret = safecall(self.events[name], self, name, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+			local success, ret = safecall(self.events[name], self, name, unpack(arg))
 			if success then
 				return ret
 			end

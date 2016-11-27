@@ -22,12 +22,11 @@ local reg = LibStub("AceConfigRegistry-3.0")
 
 -- Lua APIs
 local tconcat, tinsert, tsort, tremove, tgetn = table.concat, table.insert, table.sort, table.remove, table.getn
-local strmatch, format = strmatch, string.format
+local format, strfind, strupper = string.format, string.find, string.upper
 local assert, loadstring, error = assert, loadstring, error
 local pairs, next, type, unpack, wipe, ipairs = pairs, next, type, unpack, wipe, ipairs
 local rawset, tostring, tonumber = rawset, tostring, tonumber
 local math_min, math_max, math_floor = math.min, math.max, math.floor
-local strupper = string.upper
 
 -- Global vars/functions that we don't upvalue since they might get hooked, or upgraded
 -- List them here for Mikk's FindGlobals script
@@ -649,7 +648,7 @@ local function ActivateControl(widget, event, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 
 	if option.type == "input" then
 		if type(pattern)=="string" then
-			if not strmatch(a1, pattern) then
+			if not strfind(a1, pattern) then
 				validated = false
 			end
 		end
@@ -1893,23 +1892,14 @@ end
 -- @param parent The parent to use in the interface options tree.
 -- @param ... The path in the options table to feed into the interface options panel.
 -- @return The reference to the frame registered into the Interface Options. 
-do
-local args = {nil,nil,nil,nil,nil,nil,nil,nil,nil,nil}
-function AceConfigDialog:AddToBlizOptions(appName, name, parent, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+function AceConfigDialog:AddToBlizOptions(appName, name, parent, ...)
 	local BlizOptions = AceConfigDialog.BlizOptions
 	
 	local key = appName
-	args[1] = a1
-	args[2] = a2
-	args[3] = a3
-	args[4] = a4
-	args[5] = a5
-	args[6] = a6
-	args[7] = a7
-	args[8] = a8
-	args[9] = a9
-	args[10] = a10
-	key = tconcat(args, "\001")
+	local l = tgetn(arg)
+	for n = 1, l do
+		key = key .. "\001" .. arg[n]
+	end
 	
 	if not BlizOptions[appName] then
 		BlizOptions[appName] = {}
@@ -1922,9 +1912,9 @@ function AceConfigDialog:AddToBlizOptions(appName, name, parent, a1,a2,a3,a4,a5,
 
 		group:SetTitle(name or appName)
 		group:SetUserData("appName", appName)
-		if tgetn(args) > 0 then
+		if l > 0 then
 			local path = {}
-			for n = 1, tgetn(args) do
+			for n = 1, l do
 				tinsert(path, args[n])
 			end
 			group:SetUserData("path", path)
@@ -1937,4 +1927,3 @@ function AceConfigDialog:AddToBlizOptions(appName, name, parent, a1,a2,a3,a4,a5,
 		error(("%s has already been added to the Blizzard Options Window with the given path"):format(appName), 2)
 	end
 end
-end -- AceConfigDialog:AddToBlizOptions

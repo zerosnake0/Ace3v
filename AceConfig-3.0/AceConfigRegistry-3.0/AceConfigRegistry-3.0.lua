@@ -4,7 +4,7 @@
 -- * Valid **uiTypes**: "cmd", "dropdown", "dialog". This is verified by the library at call time. \\
 -- * The **uiName** field is expected to contain the full name of the calling addon, including version, e.g. "FooBar-1.0". This is verified by the library at call time.\\
 -- * The **appName** field is the options table name as given at registration time \\
--- 
+--
 -- :IterateOptionsTables() (and :GetOptionsTable() if only given one argument) return a function reference that the requesting config handling addon must call with valid "uiType", "uiName".
 -- @class file
 -- @name AceConfigRegistry-3.0
@@ -24,7 +24,7 @@ end
 
 -- Lua APIs
 local tinsert, tconcat, tgetn = table.insert, table.concat, table.getn
-local strfind, strmatch = string.find, strmatch
+local strfind = string.find
 local type, tostring, pairs = type, tostring, pairs
 local error, assert = error, assert
 
@@ -33,37 +33,23 @@ local error, assert = error, assert
 
 
 AceConfigRegistry.validated = {
-	-- list of options table names ran through :ValidateOptionsTable automatically. 
+	-- list of options table names ran through :ValidateOptionsTable automatically.
 	-- CLEARED ON PURPOSE, since newer versions may have newer validators
 	cmd = {},
 	dropdown = {},
 	dialog = {},
 }
 
-
-local err
-do
-local t = {nil,nil,nil,nil,nil,nil,nil,nil,nil,nil}
-function err(msg, errlvl, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
-	t[1] = a1
-	t[2] = a2
-	t[3] = a3
-	t[4] = a4
-	t[5] = a5
-	t[6] = a6
-	t[7] = a7
-	t[8] = a8
-	t[9] = a9
-	t[10] = a10
-	local i,j = 1,tgetn(t)
+local function err(msg, errlvl, arg)
+	local l = tgetn(arg)
+	local i,j = 1,l
 	while i < j do
-		t[i], t[j] = t[j], t[i]
+		arg[i], arg[j] = arg[j], arg[i]
 		i = i+1
 		j = j-1
 	end
-	error(MAJOR..":ValidateOptionsTable(): "..tconcat(t,".")..msg, errlvl+2)
+	error(MAJOR..":ValidateOptionsTable(): "..tconcat(arg,".")..msg, errlvl+2)
 end
-end -- err
 
 local isstring={["string"]=true, _="string"}
 local isstringfunc={["string"]=true,["function"]=true, _="string or funcref"}
@@ -159,8 +145,8 @@ local typedkeys={
 	select={
 		values=ismethodtable,
 		style={
-			["nil"]=true, 
-			["string"]={dropdown=true,radio=true}, 
+			["nil"]=true,
+			["string"]={dropdown=true,radio=true},
 			_="string: 'dropdown' or 'radio'"
 		},
 		control=optstring,
@@ -184,75 +170,75 @@ local typedkeys={
 	},
 }
 
-local function validateKey(k,errlvl,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+local function validateKey(k,errlvl,arg)
 	errlvl=(errlvl or 0)+1
 	if type(k)~="string" then
-		err("["..tostring(k).."] - key is not a string", errlvl,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+		err("["..tostring(k).."] - key is not a string", errlvl, arg)
 	end
 	if strfind(k, "[%c\127]") then
-		err("["..tostring(k).."] - key name contained control characters", errlvl,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+		err("["..tostring(k).."] - key name contained control characters", errlvl, arg)
 	end
 end
 
-local function validateVal(v, oktypes, errlvl,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+local function validateVal(v, oktypes, errlvl, arg)
 	errlvl=(errlvl or 0)+1
 	local isok=oktypes[type(v)] or oktypes["*"]
 
 	if not isok then
-		err(": expected a "..oktypes._..", got '"..tostring(v).."'", errlvl,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+		err(": expected a "..oktypes._..", got '"..tostring(v).."'", errlvl, arg)
 	end
 	if type(isok)=="table" then		-- isok was a table containing specific values to be tested for!
 		if not isok[v] then
-			err(": did not expect "..type(v).." value '"..tostring(v).."'", errlvl,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+			err(": did not expect "..type(v).." value '"..tostring(v).."'", errlvl, arg)
 		end
 	end
 end
 
-local function validate(options,errlvl,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+local function validate(options,errlvl,arg)
 	errlvl=(errlvl or 0)+1
 	-- basic consistency
 	if type(options)~="table" then
-		err(": expected a table, got a "..type(options), errlvl,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+		err(": expected a table, got a "..type(options), errlvl, arg)
 	end
 	if type(options.type)~="string" then
-		err(".type: expected a string, got a "..type(options.type), errlvl,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+		err(".type: expected a string, got a "..type(options.type), errlvl, arg)
 	end
-	
+
 	-- get type and 'typedkeys' member
 	local tk = typedkeys[options.type]
 	if not tk then
-		err(".type: unknown type '"..options.type.."'", errlvl,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+		err(".type: unknown type '"..options.type.."'", errlvl, arg)
 	end
-	
+
 	-- make sure that all options[] are known parameters
 	for k,v in pairs(options) do
 		if not (tk[k] or basekeys[k]) then
-			err(": unknown parameter", errlvl,tostring(k),a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+			err(": unknown parameter", errlvl,tostring(k), arg)
 		end
 	end
 
 	-- verify that required params are there, and that everything is the right type
 	for k,oktypes in pairs(basekeys) do
-		validateVal(options[k], oktypes, errlvl,k,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+		validateVal(options[k], oktypes, errlvl, k, arg)
 	end
 	for k,oktypes in pairs(tk) do
-		validateVal(options[k], oktypes, errlvl,k,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+		validateVal(options[k], oktypes, errlvl, k, arg)
 	end
 
 	-- extra logic for groups
 	if options.type=="group" then
 		for k,v in pairs(options.args) do
-			validateKey(k,errlvl,"args",a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
-			validate(v, errlvl,k,"args",a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+			validateKey(k,errlvl,"args", arg)
+			validate(v, errlvl,k,"args", arg)
 		end
 		if options.plugins then
 			for plugname,plugin in pairs(options.plugins) do
 				if type(plugin)~="table" then
-					err(": expected a table, got '"..tostring(plugin).."'", errlvl,tostring(plugname),"plugins",a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+					err(": expected a table, got '"..tostring(plugin).."'", errlvl,tostring(plugname), "plugins", arg)
 				end
 				for k,v in pairs(plugin) do
-					validateKey(k,errlvl,tostring(plugname),"plugins",a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
-					validate(v, errlvl,k,tostring(plugname),"plugins",a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+					validateKey(k,errlvl,tostring(plugname),"plugins",arg)
+					validate(v, errlvl,k,tostring(plugname),"plugins",arg)
 				end
 			end
 		end
@@ -294,7 +280,7 @@ local function validateGetterArgs(uiType, uiName, errlvl)
 	if uiType~="cmd" and uiType~="dropdown" and uiType~="dialog" then
 		error(MAJOR..": Requesting options table: 'uiType' - invalid configuration UI type, expected 'cmd', 'dropdown' or 'dialog'", errlvl)
 	end
-	if not strmatch(uiName, "[A-Za-z]%-[0-9]") then	-- Expecting e.g. "MyLib-1.2"
+	if not strfind(uiName, "[A-Za-z]+-[0-9]") then	-- Expecting e.g. "MyLib-1.2"
 		error(MAJOR..": Requesting options table: 'uiName' - badly formatted or missing version number. Expected e.g. 'MyLib-1.2'", errlvl)
 	end
 end
@@ -316,7 +302,7 @@ function AceConfigRegistry:RegisterOptionsTable(appName, options, skipValidation
 				AceConfigRegistry:ValidateOptionsTable(options, appName, errlvl)	-- upgradable
 				AceConfigRegistry.validated[uiType][appName] = true
 			end
-			return options 
+			return options
 		end
 	elseif type(options)=="function" then
 		AceConfigRegistry.tables[appName] = function(uiType, uiName, errlvl)
@@ -354,7 +340,7 @@ function AceConfigRegistry:GetOptionsTable(appName, uiType, uiName)
 	if not f then
 		return nil
 	end
-	
+
 	if uiType then
 		return f(uiType,uiName,1)	-- get the table for us
 	else

@@ -1,4 +1,5 @@
 _G = _G or getfenv(0)
+local strsub, strgsub = string.sub, string.gsub
 local tremove, tgetn = table.remove, table.getn
 local unpack = unpack
 
@@ -21,15 +22,11 @@ end
 end -- safecall
 
 -- some string functions
+-- vanilla available string operations:
+--    sub, gfind, rep, gsub, char, dump, find, upper, len, format, byte, lower
+-- we will just replace every string.match with string.find in the code
 function strtrim(s)
-  return (s:gsub("^%s*(.-)%s*$", "%1"))
-end
-
-function strmatch(s,pattern,init)
-	local tmp = {string.find(s,pattern,init)}
-	tremove(tmp,2)
-	tremove(tmp,1)
-	return unpack(tmp)
+	return strgsub(s, "^%s*(.-)%s*$", "%1")
 end
 
 function strsplit(delim, s, n)
@@ -87,4 +84,11 @@ function wipe(t)
 	setmetatable(t, nil)
 	for k,v in pairs(t) do t[k] = nil end
 	return t
+end
+
+function dbg(...)
+	for i=1,tgetn(arg) do
+		arg[i] = tostring(arg[i])
+	end
+	DEFAULT_CHAT_FRAME:AddMessage(table.concat(arg,","))
 end

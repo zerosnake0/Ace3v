@@ -17,7 +17,7 @@ local AceSerializer, oldminor = LibStub:NewLibrary(MAJOR, MINOR)
 if not AceSerializer then return end
 
 -- Lua APIs
-local strbyte, strchar, gsub, gmatch, format = string.byte, string.char, string.gsub, string.gmatch, string.format
+local strbyte, strchar, gsub, gfind, format = string.byte, string.char, string.gsub, string.gfind, string.format
 local assert, error, pcall = assert, error, pcall
 local type, tostring, tonumber = type, tostring, tonumber
 local pairs, select, frexp = pairs, select, math.frexp
@@ -251,7 +251,7 @@ end
 function AceSerializer:Deserialize(str)
 	str = gsub(str, "[%c ]", "")	-- ignore all control characters; nice for embedding in email and stuff
 
-	local iter = gmatch(str, "(^.)([^^]*)")	-- Any ^x followed by string of non-^
+	local iter = gfind(str, "(^.)([^^]*)")	-- Any ^x followed by string of non-^
 	local ctl,data = iter()
 	if not ctl or ctl~="^1" then
 		-- we purposefully ignore the data portion of the start code, it can be used as an extension mechanism

@@ -21,7 +21,7 @@ AceConsole.commands = AceConsole.commands or {} -- table containing commands reg
 AceConsole.weakcommands = AceConsole.weakcommands or {} -- table containing self, command => func references for weak commands that don't persist through enable/disable
 
 -- Lua APIs
-local tinsert, tconcat, tgetn = table.insert, table.concat, table.getn
+local tinsert, tconcat, tgetn, tsetn = table.insert, table.concat, table.getn, table.setn
 local tostring = tostring
 local type, pairs, error = type, pairs, error
 local format, strfind, strsub = string.format, string.find, string.sub
@@ -44,7 +44,10 @@ local function Print(self, frame, ...)
 	for i=1,e do
 		tmp[b+i] = tostring(arg[i])
 	end
-	frame:AddMessage(tconcat(tmp," ",1,e+b)) -- explicitly
+	e = e + b
+	if e >= 1 then
+		frame:AddMessage(tconcat(tmp," ",1,e)) -- explicitly
+	end
 end
 
 --- Print to DEFAULT_CHAT_FRAME or given ChatFrame (anything with an .AddMessage function)

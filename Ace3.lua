@@ -18,6 +18,8 @@ local dialog = LibStub("AceConfigDialog-3.0")
 Ace3 = LibStub("AceAddon-3.0"):NewAddon("Ace3", "AceConsole-3.0")
 local Ace3 = Ace3
 
+local strfind = string.find
+
 local selectedgroup
 local frame
 local select
@@ -60,14 +62,14 @@ function Ace3:Open()
 		self:Print("No Configs are Registered")
 		return
 	end
-	
+
 	if not frame then
 		frame = gui:Create("Frame")
 		frame:ReleaseChildren()
 		frame:SetTitle("Ace3 Options")
 		frame:SetLayout("FILL")
 		frame:SetCallback("OnClose", frameOnClose)
-	
+
 		select = gui:Create("DropdownGroup")
 		select:SetGroupList(configs)
 		select:SetCallback("OnGroupSelected", ConfigSelected)
@@ -94,7 +96,7 @@ end
 reg.RegisterCallback(Ace3, "ConfigTableChange", "ConfigTableChanged")
 
 function Ace3:PrintCmd(input)
-	input = input:trim():match("^(.-);*$")
+	local _,_,input = strfind(strtrim(input), "^(.-);*$")
 	local func, err = loadstring("LibStub(\"AceConsole-3.0\"):Print(" .. input .. ")")
 	if not func then
 		LibStub("AceConsole-3.0"):Print("Error: " .. err)

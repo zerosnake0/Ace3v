@@ -29,7 +29,6 @@ local CTL = assert(ChatThrottleLib, "AceComm-3.0 requires ChatThrottleLib")
 -- Lua APIs
 local type, next, pairs, tostring = type, next, pairs, tostring
 local strlen, strsub, strfind = string.len, string.sub, string.find
-local match = strmatch
 local tinsert, tconcat, tgetn, tremove = table.insert, table.concat, table.getn, table.remove
 local error, assert = error, assert
 
@@ -90,7 +89,9 @@ function AceComm:SendCommMessage(prefix, text, distribution, target, prio, callb
 	end
 
 	local textlen = strlen(text)
-	local maxtextlen = 255  -- Yes, the max is 255 even if the dev post said 256. I tested. Char 256+ get silently truncated. /Mikk, 20110327
+	-- Yes, the max is 255 even if the dev post said 256. I tested. Char 256+ get silently truncated. /Mikk, 20110327
+	-- Ace3v: substract the prefix length
+	local maxtextlen = 254 - strlen(prefix)
 	local queueName = prefix..distribution..(target or "")
 
 	local ctlCallback = nil
@@ -101,7 +102,7 @@ function AceComm:SendCommMessage(prefix, text, distribution, target, prio, callb
 	end
 
 	local forceMultipart
-	if match(text, "^[\001-\009]") then -- 4.1+: see if the first character is a control character
+	if strfind(text, "^[\001-\009]") then -- 4.1+: see if the first character is a control character
 		-- we need to escape the first character with a \004
 		if textlen+1 > maxtextlen then	-- would we go over the size limit?
 			forceMultipart = true	-- just make it multipart, no escape problems then
@@ -246,7 +247,7 @@ AceComm.callbacks.OnUnused = nil
 local function OnEvent()
 	local prefix, message, distribution, sender = arg1, arg2, arg3, arg4
 	if event == "CHAT_MSG_ADDON" then
-		local control, rest = match(message, "^([\001-\009])(.*)")
+		local _, _, control, rest = strfind(message, "^([\001-\009])(.*)")
 		if control then
 			if control==MSG_MULTI_FIRST then
 				AceComm:OnReceiveMultipartFirst(prefix, rest, distribution, sender)

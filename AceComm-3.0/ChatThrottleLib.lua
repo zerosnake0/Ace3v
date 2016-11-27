@@ -210,12 +210,12 @@ function ChatThrottleLib:Init()
 		-- Use secure hooks as of v16. Old regular hook support yanked out in v21.
 		self.securelyHooked = true
 		--SendChatMessage
-		hooksecurefunc("SendChatMessage", function(...)
-			return ChatThrottleLib.Hook_SendChatMessage(unpack(arg))
+		hooksecurefunc("SendChatMessage", function(text, chattype, language, destination)
+			return ChatThrottleLib.Hook_SendChatMessage(text, chattype, language, destination)
 		end)
 		--SendAddonMessage
-		hooksecurefunc("SendAddonMessage", function(...)
-			return ChatThrottleLib.Hook_SendAddonMessage(unpack(arg))
+		hooksecurefunc("SendAddonMessage", function(prefix, text, chattype, destination)
+			return ChatThrottleLib.Hook_SendAddonMessage(prefix, text, chattype, destination)
 		end)
 	end
 	self.nBypass = 0
@@ -227,7 +227,7 @@ end
 
 local bMyTraffic = false
 
-function ChatThrottleLib.Hook_SendChatMessage(text, chattype, language, destination, ...)
+function ChatThrottleLib.Hook_SendChatMessage(text, chattype, language, destination)
 	if bMyTraffic then
 		return
 	end
@@ -236,7 +236,7 @@ function ChatThrottleLib.Hook_SendChatMessage(text, chattype, language, destinat
 	self.avail = self.avail - size
 	self.nBypass = self.nBypass + size	-- just a statistic
 end
-function ChatThrottleLib.Hook_SendAddonMessage(prefix, text, chattype, destination, ...)
+function ChatThrottleLib.Hook_SendAddonMessage(prefix, text, chattype, destination)
 	if bMyTraffic then
 		return
 	end

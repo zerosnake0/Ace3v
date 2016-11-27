@@ -115,9 +115,12 @@ function AceEvent:OnEmbedDisable(target)
 end
 
 -- Script to fire blizzard events into the event listeners
+-- Ace3v: in vanilla the arguments are set to global:
+--        event, arg1, arg2, arg3 ...
+--        the user have always access to them, so we save the table cost here
 local events = AceEvent.events
-AceEvent.frame:SetScript("OnEvent", function(this, event, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
-	events:Fire(event, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+AceEvent.frame:SetScript("OnEvent", function()
+	events:Fire(event)
 end)
 
 --- Finally: upgrade our old embeds

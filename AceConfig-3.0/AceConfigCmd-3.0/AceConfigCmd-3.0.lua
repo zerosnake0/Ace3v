@@ -28,12 +28,16 @@ local AceConsole -- LoD
 local AceConsoleName = "AceConsole-3.0"
 
 -- Lua APIs
-local strsub, strsplit, strlower, strmatch, strtrim = string.sub, strsplit, string.lower, strmatch, strtrim
+local strbyte = string.byte
+local strsub, strsplit, strtrim = string.sub, strsplit, strtrim
+local strlen, strupper, strlower = string.len, string.upper, string.lower
+local strfind, strgfind, strgsub = string.find, string.gfind, string.gsub
+
 local format, tonumber, tostring = string.format, tonumber, tostring
 local tsort, tinsert, tgetn, tremove = table.sort, table.insert, table.getn, table.remove
 local pairs, next, type = pairs, next, type
 local error, assert = error, assert
-local strupper = string.upper
+
 
 -- WoW APIs
 local _G = _G
@@ -81,7 +85,7 @@ end
 
 -- callmethod() - call a given named method (e.g. "get", "set") with given arguments
 
-local function callmethod(info, inputpos, tab, methodtype, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+local function callmethod(info, inputpos, tab, methodtype, arg)
 	local method = info[methodtype]
 	if not method then
 		err(info, inputpos, "'"..methodtype.."': not set")
@@ -92,12 +96,20 @@ local function callmethod(info, inputpos, tab, methodtype, a1,a2,a3,a4,a5,a6,a7,
 	info.type = tab.type
 
 	if type(method)=="function" then
-		return method(info, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+		if arg then
+			return method(info, unpack(arg))
+		else
+			return method(info)
+		end
 	elseif type(method)=="string" then
 		if type(info.handler[method])~="function" then
 			err(info, inputpos, "'"..methodtype.."': '"..method.."' is not a member function of "..tostring(info.handler))
 		end
-		return info.handler[method](info.handler, info, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+		if arg then
+			return info.handler[method](info.handler, info, unpack(arg))
+		else
+			return info.handler[method](info.handler, info)
+		end
 	else
 		assert(false)	-- type should have already been checked on read
 	end
@@ -105,7 +117,9 @@ end
 
 -- callfunction() - call a given named function (e.g. "name", "desc") with given arguments
 
-local function callfunction(info, tab, methodtype, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+-- Ace3v: currently unused
+--local function callfunction(info, tab, methodtype, ...)
+local function callfunction(info, tab, methodtype)
 	local method = tab[methodtype]
 
 	info.arg = tab.arg
@@ -113,7 +127,9 @@ local function callfunction(info, tab, methodtype, a1,a2,a3,a4,a5,a6,a7,a8,a9,a1
 	info.type = tab.type
 
 	if type(method)=="function" then
-		return method(info, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+		-- Ace3v: currently unused
+		--return method(info, unpack(arg))
+		return method(info)
 	else
 		assert(false) -- type should have already been checked on read
 	end
@@ -121,9 +137,9 @@ end
 
 -- do_final() - do the final step (set/execute) along with validation and confirmation
 
-local function do_final(info, inputpos, tab, methodtype, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+local function do_final(info, inputpos, tab, methodtype, ...)
 	if info.validate then
-		local res = callmethod(info,inputpos,tab,"validate",a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+		local res = callmethod(info,inputpos,tab,"validate",arg)
 		if type(res)=="string" then
 			usererr(info, inputpos, "'"..strsub(info.input, inputpos).."' - "..res)
 			return
@@ -131,7 +147,7 @@ local function do_final(info, inputpos, tab, methodtype, a1,a2,a3,a4,a5,a6,a7,a8
 	end
 	-- console ignores .confirm
 
-	callmethod(info,inputpos,tab,methodtype, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+	callmethod(info,inputpos,tab,methodtype,arg)
 end
 
 
@@ -251,7 +267,7 @@ local function showhelp(info, inputpos, tab, depth, noHead)
 					showhelp(info, inputpos, v, depth, true)
 					info.handler,info.handler_at = oldhandler,oldhandler_at
 				else
-					local key = k:gsub(" ", "_")
+					local key = strgsub(k, " ", "_")
 					print("  |cffffff78"..key.."|r - "..(desc or name or ""))
 				end
 			end
@@ -302,7 +318,7 @@ local function keybindingValidateFunc(text)
 	if text == "" then
 		return false
 	end
-	if not text:find("^F%d+$") and text ~= "CAPSLOCK" and text:len() ~= 1 and (text:byte() < 128 or text:len() > 4) and not _G["KEY_" .. text] then
+	if not strfind(text,"^F%d+$") and text ~= "CAPSLOCK" and strlen(text) ~= 1 and (strbyte(text) < 128 or strlen(text) > 4) and not _G["KEY_" .. text] then
 		return false
 	end
 	local s = text
@@ -348,7 +364,7 @@ local function handle(info, inputpos, tab, depth, retfalse)
 		if tab.plugins and type(tab.plugins)~="table" then err(info,inputpos) end
 
 		-- grab next arg from input
-		local _,nextpos,arg = (info.input):find(" *([^ ]+) *", inputpos)
+		local _,nextpos,arg = strfind(info.input, " *([^ ]+) *", inputpos)
 		if not arg then
 			showhelp(info, inputpos, tab, depth)
 			return
@@ -369,7 +385,7 @@ local function handle(info, inputpos, tab, depth, retfalse)
 					return	-- done, name was found in inline group
 				end
 			-- matching name and not a inline group
-			elseif strlower(arg)==strlower(k:gsub(" ", "_")) then
+			elseif strlower(arg)==strlower(strgsub(k, " ", "_")) then
 				info[depth+1] = k
 				return handle(info,nextpos,v,depth+1)
 			end
@@ -406,7 +422,7 @@ local function handle(info, inputpos, tab, depth, retfalse)
 		local res = true
 		if tab.pattern then
 			if not(type(tab.pattern)=="string") then err(info, inputpos, "'pattern' - expected a string") end
-			if not strmatch(str, tab.pattern) then
+			if not strfind(str, tab.pattern) then
 				usererr(info, inputpos, "'"..str.."' - " .. L["invalid input"])
 				return
 			end
@@ -534,9 +550,9 @@ local function handle(info, inputpos, tab, depth, retfalse)
 			print(L["Options for |cffffff78"..info[tgetn(info)].."|r (multiple possible):"])
 			for k, v in pairs(values) do
 				if callmethod(info, inputpos, tab, "get", k) then
-					print(fmt_sel:format(k, v))
+					print(format(fmt_sel, k, v))
 				else
-					print(fmt:format(k, v))
+					print(format(fmt, k, v))
 				end
 			end
 			return
@@ -546,9 +562,9 @@ local function handle(info, inputpos, tab, depth, retfalse)
 		--parse for =on =off =default in the process
 		--table will be key = true for options that should toggle, key = [on|off|default] for options to be set
 		local sels = {}
-		for v in str:gmatch("[^ ]+") do
+		for v in strgfind(str, "[^ ]+") do
 			--parse option=on etc
-			local opt, val = v:match('(.+)=(.+)')
+			local _, _, opt, val = strfind(v, '(.+)=(.+)')
 			--get option if toggling
 			if not opt then
 				opt = v
@@ -631,7 +647,7 @@ local function handle(info, inputpos, tab, depth, retfalse)
 			return
 		end
 
-		local r, g, b, a
+		local _, r, g, b, a
 
 		local hasAlpha = tab.hasAlpha
 		if type(hasAlpha) == "function" or type(hasAlpha) == "string" then
@@ -641,12 +657,12 @@ local function handle(info, inputpos, tab, depth, retfalse)
 		end
 
 		if hasAlpha then
-			if str:len() == 8 and str:find("^%x*$")  then
+			if strlen(str) == 8 and strfind(str, "^%x*$")  then
 				--parse a hex string
-				r,g,b,a = tonumber(str:sub(1, 2), 16) / 255, tonumber(str:sub(3, 4), 16) / 255, tonumber(str:sub(5, 6), 16) / 255, tonumber(str:sub(7, 8), 16) / 255
+				r,g,b,a = tonumber(strsub(str, 1, 2), 16) / 255, tonumber(strsub(str, 3, 4), 16) / 255, tonumber(strsub(str, 5, 6), 16) / 255, tonumber(strsub(str, 7, 8), 16) / 255
 			else
 				--parse seperate values
-				r,g,b,a = str:match("^([%d%.]+) ([%d%.]+) ([%d%.]+) ([%d%.]+)$")
+				_,_,r,g,b,a = strfind(str, "^([%d%.]+) ([%d%.]+) ([%d%.]+) ([%d%.]+)$")
 				r,g,b,a = tonumber(r), tonumber(g), tonumber(b), tonumber(a)
 			end
 			if not (r and g and b and a) then
@@ -668,12 +684,12 @@ local function handle(info, inputpos, tab, depth, retfalse)
 			end
 		else
 			a = 1.0
-			if str:len() == 6 and str:find("^%x*$") then
+			if strlen(str) == 6 and strfind(str, "^%x*$") then
 				--parse a hex string
-				r,g,b = tonumber(str:sub(1, 2), 16) / 255, tonumber(str:sub(3, 4), 16) / 255, tonumber(str:sub(5, 6), 16) / 255
+				r,g,b = tonumber(strsub(str, 1, 2), 16) / 255, tonumber(strsub(str, 3, 4), 16) / 255, tonumber(strsub(str, 5, 6), 16) / 255
 			else
 				--parse seperate values
-				r,g,b = str:match("^([%d%.]+) ([%d%.]+) ([%d%.]+)$")
+				_,_,r,g,b = strfind(str, "^([%d%.]+) ([%d%.]+) ([%d%.]+)$")
 				r,g,b = tonumber(r), tonumber(g), tonumber(b)
 			end
 			if not (r and g and b) then
