@@ -65,6 +65,13 @@ local CallbackDummy = { Fire = function() end }
 
 local DBObjectLib = {}
 
+-- Ace3v: for all recursive functions we must declare the iterator as local again, this step is necessary in vanilla
+-- Example:
+--   for k,v in pairs(table) do
+--       local v = v
+--       ...
+
+
 --[[-------------------------------------------------------------------------
 	AceDB Utility Functions
 ---------------------------------------------------------------------------]]
@@ -74,6 +81,7 @@ local function copyTable(src, dest)
 	if type(dest) ~= "table" then dest = {} end
 	if type(src) == "table" then
 		for k,v in pairs(src) do
+			local v = v
 			if type(v) == "table" then
 				-- try to index the key first so that the metatable creates the defaults, if set, and use that table
 				v = copyTable(v, dest[k])
@@ -93,6 +101,7 @@ local function copyDefaults(dest, src)
 	-- this happens if some value in the SV overwrites our default value with a non-table
 	--if type(dest) ~= "table" then return end
 	for k, v in pairs(src) do
+		local v = v
 		if k == "*" or k == "**" then
 			if type(v) == "table" then
 				-- This is a metatable used for table defaults
@@ -140,10 +149,12 @@ local function removeDefaults(db, defaults, blocker)
 	setmetatable(db, nil)
 	-- loop through the defaults and remove their content
 	for k,v in pairs(defaults) do
+		local v = v
 		if k == "*" or k == "**" then
 			if type(v) == "table" then
 				-- Loop through all the actual k,v pairs and remove
 				for key, value in pairs(db) do
+					local value = value
 					if type(value) == "table" then
 						-- if the key was not explicitly specified in the defaults table, just strip everything from * and ** tables
 						if defaults[key] == nil and (not blocker or blocker[key] == nil) then
@@ -205,36 +216,36 @@ end
 -- Metatable to handle the dynamic creation of sections and copying of sections.
 local dbmt = {
 	__index = function(t, section)
-			local keys = rawget(t, "keys")
-			local key = keys[section]
-			if key then
-				local defaultTbl = rawget(t, "defaults")
-				local defaults = defaultTbl and defaultTbl[section]
+		local keys = rawget(t, "keys")
+		local key = keys[section]
+		if key then
+			local defaultTbl = rawget(t, "defaults")
+			local defaults = defaultTbl and defaultTbl[section]
 
-				if section == "profile" then
-					local new = initSection(t, section, "profiles", key, defaults)
-					if new then
-						-- Callback: OnNewProfile, database, newProfileKey
-						t.callbacks:Fire("OnNewProfile", t, key)
-					end
-				elseif section == "profiles" then
-					local sv = rawget(t, "sv")
-					if not sv.profiles then sv.profiles = {} end
-					rawset(t, "profiles", sv.profiles)
-				elseif section == "global" then
-					local sv = rawget(t, "sv")
-					if not sv.global then sv.global = {} end
-					if defaults then
-						copyDefaults(sv.global, defaults)
-					end
-					rawset(t, section, sv.global)
-				else
-					initSection(t, section, section, key, defaults)
+			if section == "profile" then
+				local new = initSection(t, section, "profiles", key, defaults)
+				if new then
+					-- Callback: OnNewProfile, database, newProfileKey
+					t.callbacks:Fire("OnNewProfile", t, key)
 				end
+			elseif section == "profiles" then
+				local sv = rawget(t, "sv")
+				if not sv.profiles then sv.profiles = {} end
+				rawset(t, "profiles", sv.profiles)
+			elseif section == "global" then
+				local sv = rawget(t, "sv")
+				if not sv.global then sv.global = {} end
+				if defaults then
+					copyDefaults(sv.global, defaults)
+				end
+				rawset(t, section, sv.global)
+			else
+				initSection(t, section, section, key, defaults)
 			end
-
-			return rawget(t, section)
 		end
+
+		return rawget(t, section)
+	end
 }
 
 local function validateDefaults(defaults, keyTbl, offset)
@@ -350,7 +361,7 @@ end
 -- handle PLAYER_LOGOUT
 -- strip all defaults from all databases
 -- and cleans up empty sections
-local function logoutHandler(frame, event)
+local function logoutHandler()
 	if event == "PLAYER_LOGOUT" then
 		for db in pairs(AceDB.db_registry) do
 			db.callbacks:Fire("OnDatabaseShutdown", db)
@@ -596,7 +607,7 @@ function DBObjectLib:ResetProfile(noChildren, noCallbacks)
 
 	-- Callback: OnProfileReset, database
 	if not noCallbacks then
-		self.callbacks:Fire("OnProfileReset", self)
+		self.callbacks:Fire("OnProfileReset", self, self.keys["profile"])
 	end
 end
 

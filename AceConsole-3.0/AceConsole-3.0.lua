@@ -88,7 +88,7 @@ end
 -- @param func Function to call when the slash command is being used (funcref or methodname)
 -- @param persist if false, the command will be soft disabled/enabled when aceconsole is used as a mixin (default: true)
 function AceConsole:RegisterChatCommand( command, func, persist )
-	if type(command)~="string" then error([[Usage: AceConsole:RegisterChatCommand( "command", func[, persist ]): 'command' - expected a string]], 2) end
+	if type(command)~="string" then error([[Usage: AceConsole:RegisterChatCommand(command, func[, persist ]): 'command' - expected a string]], 2) end
 
 	if persist==nil then persist=true end	-- I'd rather have my addon's "/addon enable" around if the author screws up. Having some extra slash regged when it shouldnt be isn't as destructive. True is a better default. /Mikk
 
@@ -97,13 +97,17 @@ function AceConsole:RegisterChatCommand( command, func, persist )
 	local t = type(func)
 
 	if t  == "string" then
+		-- Ace3v: prevent user from using AceConSole as self
+		if self == AceConsole then
+			error([[Usage: RegisterChatCommand(command, func[, persist]): 'self' - use your own 'self']], 2)
+		end
 		SlashCmdList[name] = function(input, editBox)
 			self[func](self, input, editBox)
 		end
 	elseif t == "function" then
 		SlashCmdList[name] = func
 	else
-		error([[Usage: AceConsole:RegisterChatCommand( "command", func[, persist ]): 'func' - expected a string or a function]], 2)
+		error([[Usage: AceConsole:RegisterChatCommand(command, func[, persist ]): 'func' - expected a string or a function]], 2)
 	end
 	_G["SLASH_"..name.."1"] = "/"..strlower(command)
 	AceConsole.commands[command] = name

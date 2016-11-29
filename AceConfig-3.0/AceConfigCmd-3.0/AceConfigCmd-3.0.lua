@@ -21,6 +21,7 @@ local AceConfigCmd = LibStub:NewLibrary(MAJOR, MINOR)
 if not AceConfigCmd then return end
 
 AceConfigCmd.commands = AceConfigCmd.commands or {}
+AceConfigCmd.embeds = AceConfigCmd.embeds or {}
 local commands = AceConfigCmd.commands
 
 local cfgreg = LibStub("AceConfigRegistry-3.0")
@@ -267,6 +268,15 @@ local function showhelp(info, inputpos, tab, depth, noHead)
 	end
 end
 
+local function getValueFromTab(info, inputpos, tab, key)
+	local v = tab[key]
+	if type(v) == "function" or type(v) == "string" then
+		info[key] = v
+		v = callmethod(info, inputpos, tab, key)
+		info[key] = nil
+	end
+	return v
+end
 
 local function keybindingValidateFunc(text)
 	if text == nil or text == "NONE" then
@@ -464,20 +474,33 @@ local function handle(info, inputpos, tab, depth, retfalse)
 
 	elseif tab.type=="range" then
 		------------ range --------------------------------------------
+		local str = strtrim(strlower(str))
+		if str == "" then
+			-- TODO: Show current value
+			return
+		end
+
 		local val = tonumber(str)
 		if not val then
 			usererr(info, inputpos, "'"..str.."' - "..L["expected number"])
 			return
 		end
-		if type(info.step)=="number" then
-			val = math.floor(val/info.step) * info.step
+
+		local step = getValueFromTab(info, inputpos, tab, "step")
+		local min = getValueFromTab(info, inputpos, tab, "min")
+
+		if type(step)=="number" then
+			val = min + math.floor((val-min)/step) * step
 		end
-		if type(info.min)=="number" and val<info.min then
-			usererr(info, inputpos, val.." - "..format(L["must be equal to or higher than %s"], tostring(info.min)) )
+
+		if type(min)=="number" and val<min then
+			usererr(info, inputpos, val.." - "..format(L["must be equal to or higher than %s"], tostring(min)) )
 			return
 		end
-		if type(info.max)=="number" and val>info.max then
-			usererr(info, inputpos, val.." - "..format(L["must be equal to or lower than %s"], tostring(info.max)) )
+
+		local max = getValueFromTab(info, inputpos, tab, "max")
+		if type(max)=="number" and val>max then
+			usererr(info, inputpos, val.." - "..format(L["must be equal to or lower than %s"], tostring(max)) )
 			return
 		end
 
@@ -488,12 +511,7 @@ local function handle(info, inputpos, tab, depth, retfalse)
 		------------ select ------------------------------------
 		local str = strtrim(strlower(str))
 
-		local values = tab.values
-		if type(values) == "function" or type(values) == "string" then
-			info.values = values
-			values = callmethod(info, inputpos, tab, "values")
-			info.values = nil
-		end
+		local values = getValueFromTab(info, inputpos, tab, "values")
 
 		if str == "" then
 			local b = callmethod(info, inputpos, tab, "get")
@@ -529,12 +547,7 @@ local function handle(info, inputpos, tab, depth, retfalse)
 		------------ multiselect -------------------------------------------
 		local str = strtrim(strlower(str))
 
-		local values = tab.values
-		if type(values) == "function" or type(values) == "string" then
-			info.values = values
-			values = callmethod(info, inputpos, tab, "values")
-			info.values = nil
-		end
+		local values = getValueFromTab(info, inputpos, tab, "values")
 
 		if str == "" then
 			local fmt = "|cffffff78- [%s]|r %s"
@@ -641,12 +654,7 @@ local function handle(info, inputpos, tab, depth, retfalse)
 
 		local _, r, g, b, a
 
-		local hasAlpha = tab.hasAlpha
-		if type(hasAlpha) == "function" or type(hasAlpha) == "string" then
-			info.hasAlpha = hasAlpha
-			hasAlpha = callmethod(info, inputpos, tab, 'hasAlpha')
-			info.hasAlpha = nil
-		end
+		local hasAlpha = getValueFromTab(info, inputpos, tab, 'hasAlpha')
 
 		if hasAlpha then
 			if strlen(str) == 8 and strfind(str, "^%x*$")  then
@@ -754,6 +762,11 @@ function AceConfigCmd:HandleCommand(slashcmd, appName, input)
 	end
 	local options = assert( optgetter("cmd", MAJOR) )
 
+	-- Ace3v: prevent user from using AceConfigCmd as self
+	if self == AceConfigCmd then
+		error([[Usage: HandleCommand("slashcmd", "appName", "input"): 'self' - use your own 'self']], 2)
+	end
+
 	local info = {   -- Don't try to recycle this, it gets handed off to callbacks and whatnot
 		[0] = slashcmd,
 		appName = appName,
@@ -772,14 +785,32 @@ end
 -- Also registers tab completion with AceTab
 -- @param slashcmd The slash command WITHOUT leading slash (only used for error output)
 -- @param appName The application name as given to `:RegisterOptionsTable()`
-function AceConfigCmd:CreateChatCommand(slashcmd, appName)
+function AceConfigCmd:CreateChatCommand(slashcmd, appName, func)
 	if not AceConsole then
 		AceConsole = LibStub(AceConsoleName)
 	end
-	if AceConsole.RegisterChatCommand(self, slashcmd, function(input)
-				AceConfigCmd.HandleCommand(self, slashcmd, appName, input)	-- upgradable
-		end,
-	true) then -- succesfully registered so lets get the command -> app table in
+
+	-- Ace3v: prevent user from using AceConfigCmd as self
+	if self == AceConfigCmd then
+		error([[Usage: CreateChatCommand("slashcmd", "appName"[, "func"]): 'self' - use your own 'self']], 2)
+	end
+
+	local t = type(func)
+
+	-- Ace3v: make it possible to call another function
+	local handler
+	if t == "string" then
+		handler = function(input) self[func](self, input, slashcmd, appName) end
+	elseif t ~= "function" then
+		handler = function(input)
+			AceConfigCmd.HandleCommand(self, slashcmd, appName, input)	-- upgradable
+		end
+	else
+		handler = func
+	end
+
+	if AceConsole.RegisterChatCommand(self, slashcmd, handler, true) then
+		-- succesfully registered so lets get the command -> app table in
 		commands[slashcmd] = appName
 	end
 end
@@ -790,4 +821,13 @@ end
 -- @return The options table associated with the slash command (or nil if the slash command was not registered)
 function AceConfigCmd:GetChatCommandOptions(slashcmd)
 	return commands[slashcmd]
+end
+
+function AceConfigCmd:Embed(target)
+	target["HandleCommand"] = self["HandleCommand"]
+	target["CreateChatCommand"] = self["CreateChatCommand"]
+end
+
+for addon in pairs(AceConfigCmd.embeds) do
+	AceConfigCmd:Embed(addon)
 end
