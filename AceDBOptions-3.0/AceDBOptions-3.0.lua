@@ -386,6 +386,7 @@ local optionsTable = {
 		order = 30,
 		get = false,
 		set = "SetProfile",
+		nullable = false,	-- Ace3v: we do not want a null or empty value
 	},
 	choose = {
 		name = L["choose"],

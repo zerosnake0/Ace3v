@@ -421,6 +421,11 @@ local function handle(info, inputpos, tab, depth, retfalse)
 	elseif tab.type=="input" then
 		------------ input --------------------------------------------
 
+		if str=="" and tab.nullable == false then
+			usererr(info, inputpos, "'"..str.."' - " .. L["invalid input"])
+			return
+		end
+
 		local res = true
 		if tab.pattern then
 			if not(type(tab.pattern)=="string") then err(info, inputpos, "'pattern' - expected a string") end
@@ -514,7 +519,15 @@ local function handle(info, inputpos, tab, depth, retfalse)
 		local values = getValueFromTab(info, inputpos, tab, "values")
 
 		if str == "" then
-			local b = callmethod(info, inputpos, tab, "get")
+			-- Ace3v: it is possbile to not have a current value
+			--        we do this only for select but not for multiselect
+			local b = tab.get
+			if type(b) == "function" or type(b) == "string" then
+				b = callmethod(info, inputpos, tab, "get")
+			else
+				b = nil
+			end
+
 			local fmt = "|cffffff78- [%s]|r %s"
 			local fmt_sel = "|cffffff78- [%s]|r %s |cffff0000*|r"
 			print(L["Options for |cffffff78"..info[tgetn(info)].."|r:"])

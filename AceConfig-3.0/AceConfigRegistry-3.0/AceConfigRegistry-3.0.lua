@@ -106,10 +106,10 @@ local typedkeys={
 		args=istable,
 		plugins=opttable,
 		inline=optbool,
-		cmdInline=optbool,
-		guiInline=optbool,
-		dropdownInline=optbool,
-		dialogInline=optbool,
+			cmdInline=optbool,
+			guiInline=optbool,
+			dropdownInline=optbool,
+			dialogInline=optbool,
 		childGroups=optstring,
 	},
 	execute={
@@ -125,6 +125,7 @@ local typedkeys={
 		dialogControl=optstring,
 		dropdownControl=optstring,
 		multiline=optboolnumber,
+		nullable=optbool,
 	},
 	toggle={
 		tristate=optbool,

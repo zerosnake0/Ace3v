@@ -112,7 +112,7 @@ function AceLocale:NewLocale(application, locale, isDefault, silent)
 	end
 
 	if locale ~= gameLocale and not isDefault then
-		return -- nop, we don't need these translations
+		return nil	-- nop, we don't need these translations
 	end
 
 	registering = app -- remember globally for writeproxy and writedefaultproxy
