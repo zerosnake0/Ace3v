@@ -25,7 +25,10 @@
 
 local CTL_VERSION = 23
 
-local _G = _G
+local AceCore = LibStub("AceCore-3.0")
+local _G = AceCore._G
+local hooksecurefunc = AceCore.hooksecurefunc
+local wipe = AceCore.wipe
 
 if _G.ChatThrottleLib then
 	if _G.ChatThrottleLib.version >= CTL_VERSION then

@@ -15,6 +15,8 @@ local AceHook, oldminor = LibStub:NewLibrary(ACEHOOK_MAJOR, ACEHOOK_MINOR)
 
 if not AceHook then return end -- No upgrade needed
 
+local AceCore = LibStub("AceCore-3.0")
+
 AceHook.embeded = AceHook.embeded or {}
 AceHook.registry = AceHook.registry or setmetatable({}, {__index = function(tbl, key) tbl[key] = {} return tbl[key] end })
 AceHook.handlers = AceHook.handlers or {}
@@ -36,9 +38,9 @@ local format = string.format
 local assert, error = assert, error
 
 -- WoW APIs
-local hooksecurefunc, issecurevariable = hooksecurefunc, issecurevariable
+local hooksecurefunc, issecurevariable = AceCore.hooksecurefunc, AceCore.issecurevariable
 
-local _G = _G
+local _G = AceCore._G
 
 local protectedScripts = {
 	OnClick = true,
@@ -119,14 +121,11 @@ end
 local function donothing() end
 
 -- @param self
-
 -- @param obj			nil or a frame object, use with script = true
 -- @param method		string, the name of a global function or the name of an object method
-
--- @param handler   	function, or string when it's a method of 'self'
-
--- @param script    	boolean, must be true, if the hooked object is a frame
--- @param secure		boolean, if hooking a secure script
+-- @param handler		function, or string when it's a method of 'self', if nil then will use the same value as method
+-- @param script		boolean, must be true, if the hooked object is a frame
+-- @param secure		boolean, if hooking a secure script, if true the original script will be called first, else later
 -- @param raw			boolean, if raw hooking (replacing the original method)
 -- @param forceSecure	boolean, if forcing to hook a secure method
 -- @param usage
@@ -215,9 +214,7 @@ local function hook(self, obj, method, handler, script, secure, raw, forceSecure
 
 	local orig
 	if script then
-		-- Ace3v: why here has an "or"?
-		--        the method must exist, ensured by the check above,
-		--        and the check below also needs to check it
+		-- Sometimes there is not a original function for a script.
 		orig = obj:GetScript(method) or donothing
 	elseif obj then
 		orig = obj[method]
@@ -244,7 +241,12 @@ local function hook(self, obj, method, handler, script, secure, raw, forceSecure
 			if not secure then
 				obj:SetScript(method, uid)
 			else
-				obj:HookScript(method, uid)	-- Ace3v: TODO, vanilla frame has no HookScript
+				obj:SetScript(method, function(...)
+					local tmp = {orig(unpack(arg))}
+					uid(unpack(arg))
+					return unpack(tmp)
+				end)
+				--obj:HookScript(method, uid)	-- Ace3v: vanilla frame has no HookScript
 			end
 		else
 			if not secure then

@@ -17,7 +17,9 @@ local next, pairs, type, tostring = next, pairs, type, tostring
 -- GLOBALS: geterrorhandler
 
 local xpcall = xpcall
-local errorhandler = errorhandler
+local function errorhandler(err)
+	return geterrorhandler()(err)
+end
 
 --------------------------------------------------------------------------
 -- CallbackHandler:New

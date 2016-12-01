@@ -20,6 +20,10 @@ local AceConfigCmd = LibStub:NewLibrary(MAJOR, MINOR)
 
 if not AceConfigCmd then return end
 
+local AceCore = LibStub("AceCore-3.0")
+local strtrim = AceCore.strtrim
+local strsplit = AceCore.strsplit
+
 AceConfigCmd.commands = AceConfigCmd.commands or {}
 AceConfigCmd.embeds = AceConfigCmd.embeds or {}
 local commands = AceConfigCmd.commands
@@ -29,8 +33,7 @@ local AceConsole -- LoD
 local AceConsoleName = "AceConsole-3.0"
 
 -- Lua APIs
-local strbyte = string.byte
-local strsub, strsplit, strtrim = string.sub, strsplit, strtrim
+local strbyte, strsub = string.byte, string.sub
 local strlen, strupper, strlower = string.len, string.upper, string.lower
 local strfind, strgfind, strgsub = string.find, string.gfind, string.gsub
 
@@ -41,7 +44,7 @@ local error, assert = error, assert
 
 
 -- WoW APIs
-local _G = _G
+local _G = AceCore._G
 
 -- Global vars/functions that we don't upvalue since they might get hooked, or upgraded
 -- List them here for Mikk's FindGlobals script
@@ -66,7 +69,7 @@ local handlermsg = "expected a table"
 local functypes = {["function"]=true, ["string"]=true}
 local funcmsg = "expected function or member name"
 
-local pickfirstset = pickfirstset
+local pickfirstset = AceCore.pickfirstset
 
 -- err() - produce real error() regarding malformed options tables etc
 

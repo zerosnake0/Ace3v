@@ -35,6 +35,8 @@ local AceAddon, oldminor = LibStub:NewLibrary(MAJOR, MINOR)
 
 if not AceAddon then return end -- No Upgrade needed.
 
+local AceCore = LibStub("AceCore-3.0")
+
 AceAddon.frame = AceAddon.frame or CreateFrame("Frame", "AceAddon30Frame") -- Our very own frame
 AceAddon.addons = AceAddon.addons or {} -- addons in general
 AceAddon.statuses = AceAddon.statuses or {} -- statuses of addon.
@@ -56,7 +58,7 @@ local setmetatable, getmetatable, rawset, rawget = setmetatable, getmetatable, r
 --[[
 	 xpcall safecall implementation
 ]]
-local safecall = safecall
+local safecall = AceCore.safecall
 
 -- local functions that will be implemented further down
 local Enable, Disable, EnableModule, DisableModule, Embed, NewModule, GetModule, GetName, SetDefaultModuleState, SetDefaultModuleLibraries, SetEnabledState, SetDefaultModulePrototype

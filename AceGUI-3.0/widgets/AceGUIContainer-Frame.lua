@@ -5,9 +5,11 @@ local Type, Version = "Frame", 24
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then return end
 
+local AceCore = LibStub("AceCore-3.0")
+local wipe = AceCore.wipe
+
 -- Lua APIs
 local pairs, assert, type = pairs, assert, type
-local wipe = table.wipe
 
 -- WoW APIs
 local PlaySound = PlaySound

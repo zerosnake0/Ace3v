@@ -14,11 +14,13 @@ BINDING_NAME_RELOADUI = "ReloadUI"
 local gui = LibStub("AceGUI-3.0")
 local reg = LibStub("AceConfigRegistry-3.0")
 local dialog = LibStub("AceConfigDialog-3.0")
+local AceCore = LibStub("AceCore-3.0")
 
 Ace3 = LibStub("AceAddon-3.0"):NewAddon("Ace3", "AceConsole-3.0")
 local Ace3 = Ace3
 
 local strfind = string.find
+local strtrim = AceCore.strtrim
 
 local selectedgroup
 local frame

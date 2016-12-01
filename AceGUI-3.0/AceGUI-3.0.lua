@@ -30,6 +30,8 @@ local AceGUI, oldminor = LibStub:NewLibrary(ACEGUI_MAJOR, ACEGUI_MINOR)
 
 if not AceGUI then return end -- No upgrade needed
 
+local AceCore = LibStub("AceCore-3.0")
+
 -- Lua APIs
 local tconcat, tremove, tinsert, tgetn = table.concat, table.remove, table.insert, table.getn
 local select, pairs, next, type = select, pairs, next, type
@@ -61,7 +63,7 @@ local WidgetVersions = AceGUI.WidgetVersions
 --[[
 	 xpcall safecall implementation
 ]]
-local safecall = safecall
+local safecall = AceCore.safecall
 
 -- Recycling functions
 local newWidget, delWidget

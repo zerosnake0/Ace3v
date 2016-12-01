@@ -1,6 +1,8 @@
 --[[ $Id: AceGUIWidget-DropDown.lua 1116 2014-10-12 08:15:46Z nevcairiel $ ]]--
 local AceGUI = LibStub("AceGUI-3.0")
 
+local AceCore = LibStub("AceCore-3.0")
+
 -- Lua APIs
 local min, max, floor = math.min, math.max, math.floor
 local pairs, ipairs, type = pairs, ipairs, type
@@ -9,7 +11,7 @@ local tsort, tinsert, tgetn = table.sort, table.insert, table.getn
 -- WoW APIs
 local PlaySound = PlaySound
 local UIParent, CreateFrame = UIParent, CreateFrame
-local _G = _G
+local _G = AceCore._G
 
 -- Global vars/functions that we don't upvalue since they might get hooked, or upgraded
 -- List them here for Mikk's FindGlobals script

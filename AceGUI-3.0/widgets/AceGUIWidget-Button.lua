@@ -6,11 +6,13 @@ local Type, Version = "Button", 23
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then return end
 
+local AceCore = LibStub("AceCore-3.0")
+
 -- Lua APIs
 local pairs = pairs
 
 -- WoW APIs
-local _G = _G
+local _G = AceCore._G
 local PlaySound, CreateFrame, UIParent = PlaySound, CreateFrame, UIParent
 
 --[[-----------------------------------------------------------------------------

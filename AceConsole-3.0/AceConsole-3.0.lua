@@ -16,6 +16,8 @@ local AceConsole, oldminor = LibStub:NewLibrary(MAJOR, MINOR)
 
 if not AceConsole then return end -- No upgrade needed
 
+local AceCore = LibStub("AceCore-3.0")
+
 AceConsole.embeds = AceConsole.embeds or {} -- table containing objects AceConsole is embedded in.
 AceConsole.commands = AceConsole.commands or {} -- table containing commands registered
 AceConsole.weakcommands = AceConsole.weakcommands or {} -- table containing self, command => func references for weak commands that don't persist through enable/disable
@@ -29,7 +31,7 @@ local max = math.max
 local strupper, strlower = string.upper, string.lower
 
 -- WoW APIs
-local _G = _G
+local _G = AceCore._G
 
 -- Global vars/functions that we don't upvalue since they might get hooked, or upgraded
 -- List them here for Mikk's FindGlobals script

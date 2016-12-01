@@ -46,12 +46,14 @@ local AceDB, oldminor = LibStub:NewLibrary(ACEDB_MAJOR, ACEDB_MINOR)
 
 if not AceDB then return end -- No upgrade needed
 
+local AceCore = LibStub("AceCore-3.0")
+
 -- Lua APIs
 local type, pairs, next, error = type, pairs, next, error
 local setmetatable, getmetatable, rawset, rawget = setmetatable, getmetatable, rawset, rawget
 
 -- WoW APIs
-local _G = getfenv(0)
+local _G = AceCore._G
 
 -- Global vars/functions that we don't upvalue since they might get hooked, or upgraded
 -- List them here for Mikk's FindGlobals script

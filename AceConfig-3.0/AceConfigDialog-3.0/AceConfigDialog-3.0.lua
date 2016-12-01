@@ -9,6 +9,9 @@ local AceConfigDialog, oldminor = LibStub:NewLibrary(MAJOR, MINOR)
 
 if not AceConfigDialog then return end
 
+local AceCore = LibStub("AceCore-3.0")
+local wipe = AceCore.wipe
+
 AceConfigDialog.OpenFrames = AceConfigDialog.OpenFrames or {}
 AceConfigDialog.Status = AceConfigDialog.Status or {}
 AceConfigDialog.frame = AceConfigDialog.frame or CreateFrame("Frame")
@@ -39,7 +42,7 @@ local emptyTbl = {}
 --[[
 	 xpcall safecall implementation
 ]]
-local safecall = safecall
+local safecall = AceCore.safecall
 
 local width_multiplier = 170
 
@@ -99,7 +102,7 @@ do
 end
 
 -- picks the first non-nil value and returns it
-local pickfirstset = pickfirstset
+local pickfirstset = AceCore.pickfirstset
 
 --gets an option from a given group, checking plugins
 local function GetSubOption(group, key)

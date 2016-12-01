@@ -41,6 +41,8 @@ local AceBucket, oldminor = LibStub:NewLibrary(MAJOR, MINOR)
 
 if not AceBucket then return end -- No Upgrade needed
 
+local AceCore = LibStub("AceCore-3.0")
+
 AceBucket.buckets = AceBucket.buckets or {}
 AceBucket.embeds = AceBucket.embeds or {}
 
@@ -62,7 +64,7 @@ local bucketCache = setmetatable({}, {__mode='k'})
 --[[
 	 xpcall safecall implementation
 ]]
-local safecall = safecall
+local safecall = AceCore.safecall
 
 -- FireBucket ( bucket )
 --

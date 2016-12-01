@@ -9,10 +9,12 @@ local AceTab, oldminor = LibStub:NewLibrary(ACETAB_MAJOR, ACETAB_MINOR)
 
 if not AceTab then return end -- No upgrade needed
 
+local AceCore = LibStub("AceCore-3.0")
+
 AceTab.registry = AceTab.registry or {}
 
 -- local upvalues
-local _G = _G
+local _G = AceCore._G
 local pairs = pairs
 local ipairs = ipairs
 local type = type

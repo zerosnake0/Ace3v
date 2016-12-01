@@ -6,6 +6,9 @@ local Type, Version = "TabGroup", 35
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then return end
 
+local AceCore = LibStub("AceCore-3.0")
+local wipe = AceCore.wipe
+
 -- Lua APIs
 local pairs, ipairs, assert, type, wipe = pairs, ipairs, assert, type, wipe
 local tgetn = table.getn
@@ -13,7 +16,7 @@ local tgetn = table.getn
 -- WoW APIs
 local PlaySound = PlaySound
 local CreateFrame, UIParent = CreateFrame, UIParent
-local _G = _G
+local _G = AceCore._G
 
 -- Global vars/functions that we don't upvalue since they might get hooked, or upgraded
 -- List them here for Mikk's FindGlobals script
