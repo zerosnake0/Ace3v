@@ -25,39 +25,45 @@ local strfind = string.find
 local strsub = string.sub
 local strlower = string.lower
 local strformat = string.format
+local strlen = string.len
 
-local function printf(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
-	DEFAULT_CHAT_FRAME:AddMessage(strformat(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10))
+local function printf(...)
+	DEFAULT_CHAT_FRAME:AddMessage(strformat(unpack(arg)))
+end
+
+local function getCursorPosition(this)
+	local ost = this:GetScript("OnTextSet")
+	if type(ost) ~= "function" then ost = nil end
+	if ost then this:SetScript("OnTextSet", nil) end
+	-- insert a special character
+	this:Insert("\255")
+	-- find the inserted position
+	local pos = strfind(this:GetText(),"\255")-1
+	-- highlight the inserted character (like select this character in notepad)
+	this:HighlightText(pos,pos+1)
+	-- insert a null character will erase the inserted special character
+	this:Insert("\0")
+	if ost then this:SetScript("OnTextSet", ost) end
+	return pos
 end
 
 local function getTextBeforeCursor(this, start)
-	return strsub(this:GetText(), start or 1, this:GetCursorPosition())
+	return strsub(this:GetText(), start or 1, getCursorPosition(this))
 end
 
 -- Hook OnTabPressed and OnTextChanged for the frame, give it an empty matches table, and set its curMatch to 0, if we haven't done so already.
 local function hookFrame(f)
 	if f.hookedByAceTab3 then return end
 	f.hookedByAceTab3 = true
-	if f == ChatEdit_GetActiveWindow() then
-		local origCTP = ChatEdit_CustomTabPressed
-		function ChatEdit_CustomTabPressed(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
-			if AceTab:OnTabPressed(f) then
-				return origCTP(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
-			else
-				return true
-			end
-		end
-	else
-		local origOTP = f:GetScript('OnTabPressed')
-		if type(origOTP) ~= 'function' then
-			origOTP = function() end
-		end
-		f:SetScript('OnTabPressed', function(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
-			if AceTab:OnTabPressed(f) then
-				return origOTP(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
-			end
-		end)
+	local origOTP = f:GetScript('OnTabPressed')
+	if type(origOTP) ~= 'function' then
+		origOTP = function() end
 	end
+	f:SetScript('OnTabPressed', function(...)
+		if AceTab:OnTabPressed(f) then
+			return origOTP(unpack(arg))
+		end
+	end)
 	f.at3curMatch = 0
 	f.at3matches = {}
 end
@@ -126,14 +132,11 @@ function AceTab:RegisterTabCompletion(descriptor, prematches, wordlist, usagefun
 
 	-- Make listenframes into a one-element table if it was not passed a table of frames.
 	if not listenframes then  -- default
-		listenframes = {}
-		for i = 1, NUM_CHAT_WINDOWS do
-			listenframes[i] = _G["ChatFrame"..i.."EditBox"]
-		end
+		listenframes = { _G["ChatFrameEditBox"] } -- Ace3v: in vanilla we have only this one
 	elseif type(listenframes) ~= 'table' or type(listenframes[0]) == 'userdata' and type(listenframes.IsObjectType) == 'function' then  -- single frame or framename
 		listenframes = { listenframes }
 	end
-	
+
 	-- Hook each registered listenframe and give it a matches table.
 	for _, f in pairs(listenframes) do
 		if type(f) == 'string' then
@@ -150,7 +153,7 @@ function AceTab:RegisterTabCompletion(descriptor, prematches, wordlist, usagefun
 			end
 		end
 	end
-	
+
 	-- Everything checks out; register this completion.
 	if not registry[descriptor] then
 		registry[descriptor] = { prematches = pmtable, wordlist = wordlist, usagefunc = usagefunc, listenframes = listenframes, postfunc = postfunc, pmoverwrite = pmoverwrite }
@@ -181,7 +184,7 @@ local function gcbs(s1, s2)
 	if not s1 and not s2 then return end
 	if not s1 then s1 = s2 end
 	if not s2 then s2 = s1 end
-	if tgetn(s2) < tgetn(s1) then
+	if strlen(s2) < strlen(s1) then
 		s1, s2 = s2, s1
 	end
 	if strfind(strlower(s2), "^"..strlower(s1)) then
@@ -247,27 +250,25 @@ local matches, usagefunc  -- convenience locals
 -- The entries of the matches tables are of the format raw_match = formatted_match, where raw_match is the plaintext completion and
 -- formatted_match is the match after being formatted/altered/processed by the registered postfunc.
 -- If no postfunc exists, then the formatted and raw matches are the same.
-local pms, pme, pmt, prematchStart, prematchEnd, text_prematch, entry
+local pms, pme, prematchStart, prematchEnd, text_prematch, entry
 local function fillMatches(this, desc, fallback)
 	entry = registry[desc]
 	-- See what frames are registered for this completion group.  If the frame in which we pressed tab is one of them, then we start building matches.
 	for _, f in ipairs(entry.listenframes) do
 		if f == this then
-
 			-- Try each precondition string registered for this completion group.
 			for _, prematch in ipairs(entry.prematches) do
-
 				-- Test if our prematch string is satisfied.
 				-- If it is, then we find its last occurence prior to the cursor, calculate and store its pmoverwrite value (if applicable), and start considering completions.
 				if fallback then prematch = "%s" end
 
 				-- Find the last occurence of the prematch before the cursor.
-				pms, pme, pmt = nil, 1, ''
+				pms, pme = nil, 1
 				text_prematch, prematchEnd, prematchStart = nil, nil, nil
 				while true do
-					pms, pme, pmt = strfind(text_precursor, "("..prematch..")", pme)
+					pms, pme = strfind(text_precursor, prematch, pme)
 					if pms then
-						prematchStart, prematchEnd, text_prematch = pms, pme, pmt
+						prematchStart, prematchEnd, text_prematch = pms, pme, strsub(text_precursor,pms,pme)
 						pme = pme + 1
 					else
 						break
@@ -320,21 +321,17 @@ local function fillMatches(this, desc, fallback)
 end
 
 function AceTab:OnTabPressed(this)
+
 	if this:GetText() == '' then return true end
 
-	-- allow Blizzard to handle slash commands, themselves
-	if this == ChatEdit_GetActiveWindow() then
+	if this == ChatFrameEditBox	then
 		local command = this:GetText()
 		if strfind(command, "^/[%a%d_]+$") then
 			return true
 		end
-		local _,_,cmd = strfind(command, "^/[%a%d_]+")
-		if cmd and IsSecureCmd(cmd) then
-			return true
-		end
 	end
 
-	cursor = this:GetCursorPosition()
+	cursor = getCursorPosition(this)
 
 	text_all = this:GetText()
 	text_precursor = getTextBeforeCursor(this) or ''
@@ -360,7 +357,7 @@ function AceTab:OnTabPressed(this)
 	firstPMLength = 0
 	hasNonFallback = false
 	for i in pairs(pmolengths) do pmolengths[i] = nil end
-	
+
 	for desc in pairs(notfallbacks) do
 		fillMatches(this, desc)
 	end
@@ -370,7 +367,7 @@ function AceTab:OnTabPressed(this)
 		end
 	end
 
-	if not firstMatch then 
+	if not firstMatch then
 		this.at3_last_precursor = "\0"
 		return true
 	end
@@ -392,9 +389,11 @@ function AceTab:OnTabPressed(this)
 		for desc, matches in pairs(this.at3matches) do
 			-- Don't print usage statements for fallback completion groups if we have 'real' completion groups with matches.
 			if hasNonFallback and fallbacks[desc] then break end
-			
+
 			-- Use the group's description as a heading for its usage statements.
-			DEFAULT_CHAT_FRAME:AddMessage(desc..":")
+			if usagefunc ~= true then
+				DEFAULT_CHAT_FRAME:AddMessage(desc..":")
+			end
 
 			usagefunc = registry[desc].usagefunc
 			if not usagefunc then
@@ -434,7 +433,7 @@ function AceTab:OnTabPressed(this)
 			if next(matches) then
 				-- Replace the original string with the greatest common substring of all valid completions.
 				this.at3curMatch = 1
-				this.at3origWord = strsub(text_precursor, this.at3matchStart, this.at3matchStart + pmolengths[desc] - 1) .. allGCBS or ""
+				this.at3origWord = strsub(text_precursor, this.at3matchStart, this.at3matchStart + pmolengths[desc] - 1) .. (allGCBS or "")
 				this.at3origMatch = allGCBS or ""
 				this.at3lastWord = this.at3origWord
 				this.at3lastMatch = this.at3origMatch
