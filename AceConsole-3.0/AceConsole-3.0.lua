@@ -36,21 +36,29 @@ local _G = AceCore._G
 -- Global vars/functions that we don't upvalue since they might get hooked, or upgraded
 -- List them here for Mikk's FindGlobals script
 -- GLOBALS: DEFAULT_CHAT_FRAME, SlashCmdList, hash_SlashCmdList
+local Print
+do
 local tmp = {}
-local function Print(self, frame, ...)
-	local b, e = 0, tgetn(arg)
+function Print(self, frame, arg)
 	if self ~= AceConsole then
-		b = 1
 		tmp[1] = "|cff33ff99"..tostring(self).."|r:"
+	else
+		tmp[1] = ''
 	end
-	for i=1,e do
-		tmp[b+i] = tostring(arg[i])
-	end
-	e = e + b
-	if e >= 1 then
-		frame:AddMessage(tconcat(tmp," ",1,e)) -- explicitly
+	if type(arg) == "string" then
+		frame:AddMessage(tmp[1]..arg)
+	else	-- arg is table and may contain frame as first element if argument frame is nil
+		local b, e = frame and 1 or 2, tgetn(arg)
+		if e >= b then
+			frame = frame or arg[1]
+			for i=0,e-b do
+				tmp[2+i] = tostring(arg[b+i])
+			end
+			frame:AddMessage(tconcat(tmp," ",1,e-b+2)) -- explicitly, because the length is not affected by assignment
+		end
 	end
 end
+end	-- Print
 
 --- Print to DEFAULT_CHAT_FRAME or given ChatFrame (anything with an .AddMessage function)
 -- @paramsig [chatframe ,] ...
@@ -59,9 +67,9 @@ end
 function AceConsole:Print(...)
 	local frame = arg[1]
 	if type(frame) == "table" and frame.AddMessage then	-- Is first argument something with an .AddMessage member?
-		return Print(self, unpack(arg))
+		return Print(self, nil, arg)
 	else
-		return Print(self, DEFAULT_CHAT_FRAME, unpack(arg))
+		return Print(self, DEFAULT_CHAT_FRAME, arg)
 	end
 end
 
@@ -136,18 +144,14 @@ end
 -- @return Iterator (pairs) over all commands
 function AceConsole:IterateChatCommands() return pairs(AceConsole.commands) end
 
-local function _nils(n, arg)
-	if n>1 then
-		return nil, _nils(n, arg)
-	elseif n==1 then
-		return nil, unpack(arg)
+local function nils(n,argc,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+	if n >= 1 then
+		return nil, nils(n-1,argc,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+	elseif not argc or argc == 0 then
+		return
 	else
-		return unpack(arg)
+		return a1, nils(0,argc-1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	end
-end
-
-local function nils(n, ...)
-	return _nils(n, arg)
 end
 
 --- Retreive one or more space-separated arguments from a string.
@@ -166,7 +170,7 @@ function AceConsole:GetArgs(str, numargs, startpos)
 	-- find start of new arg
 	pos = strfind(str, "[^ ]", pos)
 	if not pos then	-- whoops, end of string
-		return nils(numargs, 1e9)
+		return nils(numargs, 1, 1e9)
 	end
 
 	if numargs<1 then
@@ -221,7 +225,7 @@ function AceConsole:GetArgs(str, numargs, startpos)
 	end
 
 	-- search aborted, we hit end of string. return it all as one argument. (yes, even if it's an unterminated quote or hyperlink)
-	return strsub(str, startpos), nils(numargs-1, 1e9)
+	return strsub(str, startpos), nils(numargs-1, 1, 1e9)
 end
 
 

@@ -36,6 +36,8 @@ local AceAddon, oldminor = LibStub:NewLibrary(MAJOR, MINOR)
 if not AceAddon then return end -- No Upgrade needed.
 
 local AceCore = LibStub("AceCore-3.0")
+local Dispatchers = AceCore.Dispatchers
+local wipe, truncate = AceCore.wipe, AceCore.truncate
 
 AceAddon.frame = AceAddon.frame or CreateFrame("Frame", "AceAddon30Frame") -- Our very own frame
 AceAddon.addons = AceAddon.addons or {} -- addons in general
@@ -91,11 +93,14 @@ end
 -- -- Create a Addon object based on the table of a frame
 -- local MyFrame = CreateFrame("Frame")
 -- MyAddon = LibStub("AceAddon-3.0"):NewAddon(MyFrame, "MyAddon", "AceEvent-3.0")
-function AceAddon:NewAddon(objectorname,a1,...)
+do
+local args = {nil,nil,nil,nil,nil,nil,nil,nil,nil,nil}
+function AceAddon:NewAddon(objectorname,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+
 	local object,name
 	if type(objectorname)=="table" then
 		object=objectorname
-		name=a1
+		name=a0
 	else
 		name=objectorname
 	end
@@ -105,6 +110,17 @@ function AceAddon:NewAddon(objectorname,a1,...)
 	if self.addons[name] then
 		error(strfmt("Usage: NewAddon([object,] name, [lib, lib, lib, ...]): 'name' - Addon '%s' already exists.", name), 2)
 	end
+
+	args[1] = a1
+	args[2] = a2
+	args[3] = a3
+	args[4] = a4
+	args[5] = a5
+	args[6] = a6
+	args[7] = a7
+	args[8] = a8
+	args[9] = a9
+	args[10] = a10
 
 	object = object or {}
 	object.name = name
@@ -123,16 +139,16 @@ function AceAddon:NewAddon(objectorname,a1,...)
 	object.defaultModuleLibraries = {}
 	Embed( object ) -- embed NewModule, GetModule methods
 	if type(objectorname)=="table" then
-		self:EmbedLibraries(object,unpack(arg))
-	elseif a1 then
-		self:EmbedLibraries(object,a1,unpack(arg))
+		self:EmbedLibraries(object,nil,args)
+	elseif a0 then
+		self:EmbedLibraries(object,a0,args)
 	end
 
 	-- add to queue of addons to be initialized upon ADDON_LOADED
 	tinsert(self.initializequeue, object)
 	return object
 end
-
+end	-- AceAddon:NewAddon
 
 --- Get the addon object by its name from the internal AceAddon registry.
 -- Throws an error if the addon object cannot be found (except if silent is set).
@@ -156,8 +172,11 @@ end
 -- @paramsig addon, [lib, ...]
 -- @param addon addon object to embed the libs in
 -- @param lib List of libraries to embed into the addon
-function AceAddon:EmbedLibraries(addon,...)
-	for i=1,tgetn(arg) do
+function AceAddon:EmbedLibraries(addon,a1,arg)
+	if a1 then self:EmbedLibrary(addon, a1, false, 4) end
+	-- 10 is the max number of variable arguments in the function NewAddon and NewModule
+	for i=1,10 do
+		if not arg[i] then return end
 		self:EmbedLibrary(addon, arg[i], false, 4)
 	end
 end
@@ -222,7 +241,9 @@ local function IsModuleTrue(self) return true end
 -- -- Create a module with a prototype
 -- local prototype = { OnEnable = function(self) print("OnEnable called!") end }
 -- MyModule = MyAddon:NewModule("MyModule", prototype, "AceEvent-3.0", "AceHook-3.0")
-function NewModule(self, name, prototype, ...)
+do
+local args = {nil,nil,nil,nil,nil,nil,nil,nil,nil,nil}
+function NewModule(self, name, prototype, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	if type(name) ~= "string" then error(strfmt("Usage: NewModule(name, [prototype, [lib, lib, lib, ...]): 'name' - string expected got '%s'.", type(name)), 2) end
 	if type(prototype) ~= "string" and type(prototype) ~= "table" and type(prototype) ~= "nil" then error(strfmt("Usage: NewModule(name, [prototype, [lib, lib, lib, ...]): 'prototype' - table (prototype), string (lib) or nil expected got '%s'.", type(prototype)), 2) end
 
@@ -236,10 +257,21 @@ function NewModule(self, name, prototype, ...)
 	module:SetEnabledState(self.defaultModuleState)
 	module.moduleName = name
 
+	args[1] = a1
+	args[2] = a2
+	args[3] = a3
+	args[4] = a4
+	args[5] = a5
+	args[6] = a6
+	args[7] = a7
+	args[8] = a8
+	args[9] = a9
+	args[10] = a10
+
 	if type(prototype) == "string" then
-		AceAddon:EmbedLibraries(module, prototype, unpack(arg))
+		AceAddon:EmbedLibraries(module, prototype, args)
 	else
-		AceAddon:EmbedLibraries(module, unpack(arg))
+		AceAddon:EmbedLibraries(module, nil, args)
 	end
 	AceAddon:EmbedLibraries(module, unpack(self.defaultModuleLibraries))
 
@@ -259,6 +291,7 @@ function NewModule(self, name, prototype, ...)
 
 	return module
 end
+end	-- NewModule
 
 --- Returns the real name of the addon or module, without any prefix.
 -- @name //addon//:GetName
@@ -354,11 +387,25 @@ end
 -- MyAddon:SetDefaultModuleLibraries("AceEvent-3.0")
 -- -- Create a module
 -- MyModule = MyAddon:NewModule("MyModule")
-function SetDefaultModuleLibraries(self, ...)
+function SetDefaultModuleLibraries(self,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	if next(self.modules) then
 		error("Usage: SetDefaultModuleLibraries(...): cannot change the module defaults after a module has been registered.", 2)
 	end
-	self.defaultModuleLibraries = arg
+	local args = self.defaultModuleLibraries or {}
+
+	args[1] = a1
+	args[2] = a2
+	args[3] = a3
+	args[4] = a4
+	args[5] = a5
+	args[6] = a6
+	args[7] = a7
+	args[8] = a8
+	args[9] = a9
+	args[10] = a10
+	truncate(tmp,10)
+
+	self.defaultModuleLibraries = args
 end
 
 --- Set the default state in which new modules are being created.
@@ -626,7 +673,7 @@ function onEvent()
 		end
 	end
 end
-end -- onEvent
+end	-- onEvent
 
 AceAddon.frame:RegisterEvent("ADDON_LOADED")
 AceAddon.frame:RegisterEvent("PLAYER_LOGIN")

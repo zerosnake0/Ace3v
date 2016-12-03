@@ -6,8 +6,31 @@ if not AceCore then return end -- No upgrade needed
 local _G = getfenv(0)
 AceCore._G = _G
 local strsub, strgsub = string.sub, string.gsub
-local tremove, tgetn = table.remove, table.getn
-local unpack = unpack
+local tremove, tconcat = table.remove, table.concat
+local tgetn, tsetn = table.getn, table.setn
+
+local CreateDispatcher
+do
+local ARGS_ = {}
+function CreateDispatcher(argCount)
+	local code = [[
+		return function(func,ARGS)
+			return func(ARGS)
+		end
+	]]
+	for i=tgetn(ARGS_)+1,argCount do ARGS_[i]="a"..tostring(i) end
+	code = strgsub(code, "ARGS", tconcat(ARGS_,',',1,argCount))
+	DEFAULT_CHAT_FRAME:AddMessage(code)
+	return assert(loadstring(code, "call Dispatcher["..tostring(argCount).."]"))()
+end
+end	-- CreateDispatcher
+
+local Dispatchers = setmetatable({}, {__index=function(self, argCount)
+	local dispatcher = CreateDispatcher(argCount)
+	rawset(self, argCount, dispatcher)
+	return dispatcher
+end})
+AceCore.Dispatchers = Dispatchers
 
 local function errorhandler(err)
 	return geterrorhandler()(err)
@@ -26,7 +49,7 @@ function AceCore.safecall(func, ...)
 		return xpcall(call, errorhandler)
 	end
 end
-end -- safecall
+end	-- AceCore.safecall
 
 -- some string functions
 -- vanilla available string operations:
@@ -91,7 +114,19 @@ end
 -- wipe preserves metatable
 function AceCore.wipe(t)
 	for k,v in pairs(t) do t[k] = nil end
+	tsetn(t,0)
 	return t
+end
+
+function AceCore.truncate(t,e)
+	e = e or tgetn(t)
+	for i=1,e do
+		if t[i] == nil then
+			tsetn(t,i-1)
+			return
+		end
+	end
+	tsetn(t,e)
 end
 
 -- Some util function, may be no longer necessary when finished
@@ -103,21 +138,22 @@ function dbg(...)
 end
 
 do
-	local list = setmetatable({}, {__mode = "k"})
-	function AceCore.new()
-		local t = next(list)
-		if not t then
-			return {}
-		end
-		list[t] = nil
-		return t
+local list = setmetatable({}, {__mode = "k"})
+function AceCore.new()
+	local t = next(list)
+	if not t then
+		return {}
 	end
-
-	function AceCore.del(t)
-		setmetatable(t, nil)
-		for k in pairs(t) do
-			t[k] = nil
-		end
-		list[t] = true
-	end
+	list[t] = nil
+	return t
 end
+
+function AceCore.del(t)
+	setmetatable(t, nil)
+	for k in pairs(t) do
+		t[k] = nil
+	end
+	tsetn(t,0)
+	list[t] = true
+end
+end	-- AceCore.new, AceCore.del
