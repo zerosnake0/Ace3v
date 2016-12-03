@@ -207,8 +207,8 @@ local function showhelp(info, inputpos, tab, depth, noHead)
 		print("|cff33ff99"..info.appName.."|r: Arguments to |cffffff78/"..info[0].."|r "..strsub(info.input,1,inputpos-1)..":")
 	end
 
-	local sortTbl = new()	-- [1..n]=name
-	local refTbl = new()   -- [name]=tableref
+	local sortTbl = new("AceConfigCmd showhelp -> 1")	-- [1..n]=name
+	local refTbl = new("AceConfigCmd showhelp -> 2")   -- [name]=tableref
 
 	for k,v in iterateargs(tab) do
 		if not refTbl[k] then	-- a plugin overriding something in .args
@@ -266,8 +266,8 @@ local function showhelp(info, inputpos, tab, depth, noHead)
 			end
 		end
 	end
-	del(sortTbl)	-- Ace3v: release the tables
-	del(refTbl)
+	del(sortTbl, "AceConfigCmd showhelp <- 1")	-- Ace3v: release the tables
+	del(refTbl, "AceConfigCmd showhelp <- 2")
 end
 
 local function getValueFromTab(info, inputpos, tab, key)
@@ -540,7 +540,7 @@ local function handle(info, inputpos, tab, depth, retfalse)
 					print(format(fmt, k, v))
 				end
 			end
-			if tab.valuesTableDestroyable then del(values) end
+			if tab.valuesTableDestroyable then del(values, "AceConfigCmd select values <-") end
 			return
 		end
 
@@ -552,7 +552,7 @@ local function handle(info, inputpos, tab, depth, retfalse)
 				break
 			end
 		end
-		if tab.valuesTableDestroyable then del(values) end
+		if tab.valuesTableDestroyable then del(values, "AceConfigCmd select values <-") end
 		if not ok then
 			usererr(info, inputpos, "'"..str.."' - "..L["unknown selection"])
 			return
@@ -577,14 +577,14 @@ local function handle(info, inputpos, tab, depth, retfalse)
 					print(format(fmt, k, v))
 				end
 			end
-			if tab.valuesTableDestroyable then del(values) end
+			if tab.valuesTableDestroyable then del(values, "AceConfigCmd multiselect values <-") end
 			return
 		end
 
 		--build a table of the selections, checking that they exist
 		--parse for =on =off =default in the process
 		--table will be key = true for options that should toggle, key = [on|off|default] for options to be set
-		local sels = new()
+		local sels = new("AceConfigCmd handle multiselect ->")
 		for v in strgfind(str, "[^ ]+") do
 			--parse option=on etc
 			local _, _, opt, val = strfind(v, '(.+)=(.+)')
@@ -602,7 +602,7 @@ local function handle(info, inputpos, tab, depth, retfalse)
 					break
 				end
 			end
-			if tab.valuesTableDestroyable then del(values) end
+			if tab.valuesTableDestroyable then del(values, "AceConfigCmd multiselect values <-") end
 
 			if not ok then
 				usererr(info, inputpos, "'"..opt.."' - "..L["unknown selection"])
@@ -620,7 +620,7 @@ local function handle(info, inputpos, tab, depth, retfalse)
 					else
 						usererr(info, inputpos, format(L["'%s' '%s' - expected 'on' or 'off', or no argument to toggle."], v, val))
 					end
-					del(sels)
+					del(sels, "AceConfigCmd handle multiselect <-")
 					return
 				end
 			else
@@ -662,7 +662,7 @@ local function handle(info, inputpos, tab, depth, retfalse)
 
 			do_final(info, inputpos, tab, "set", 2, opt, newval)
 		end
-		del(sels)
+		del(sels, "AceConfigCmd handle multiselect <-")
 
 
 	elseif tab.type=="color" then

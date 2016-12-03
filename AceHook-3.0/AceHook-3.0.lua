@@ -230,11 +230,11 @@ local function hook(self, obj, method, handler, script, secure, raw, forceSecure
 	uid = createHook(self, handler, orig, secure, not (raw or secure))
 
 	if obj then
-		registry[self][obj] = registry[self][obj] or new()
+		registry[self][obj] = registry[self][obj] or new("AceHook -> registry[self][obj]")
 		registry[self][obj][method] = uid
 
 		if not secure then
-			self.hooks[obj] = self.hooks[obj] or new()
+			self.hooks[obj] = self.hooks[obj] or new("AceHook -> self.hooks[obj]")
 			self.hooks[obj][method] = orig
 		end
 
@@ -467,7 +467,7 @@ function AceHook:Unhook(obj, method)
 		local tmp = registry[self][obj]
 		tmp[method] = nil
 		if not next(tmp) then
-			del(tmp)
+			del(tmp, "AceHook <- registry[self][obj]")
 			registry[self][obj] = nil
 		end
 
@@ -484,7 +484,7 @@ function AceHook:Unhook(obj, method)
 		tmp = self.hooks[obj]
 		tmp[method] = nil
 		if not next(tmp) then
-			del(tmp)
+			del(tmp, "AceHook <- self.hooks[obj]")
 			self.hooks[obj] = nil
 		end
 	else

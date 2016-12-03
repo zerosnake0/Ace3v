@@ -4,13 +4,17 @@ local CallbackHandler = LibStub:NewLibrary(MAJOR, MINOR)
 
 if not CallbackHandler then return end -- No upgrade needed
 
-local meta = {__index = function(tbl, key) tbl[key] = {} return tbl[key] end}
+local AceCore = LibStub("AceCore-3.0")
+local new, del = AceCore.new, AceCore.del
+
+local meta = {__index = function(tbl, key) rawset(tbl, key ,new("CallbackHandler -> events["..tostring(key).."]")) return tbl[key] end}
 
 -- Lua APIs
 local tconcat, tinsert, tgetn = table.concat, table.insert, table.getn
 local assert, error, loadstring = assert, error, loadstring
 local setmetatable, rawset, rawget = setmetatable, rawset, rawget
 local next, pairs, type, tostring = next, pairs, type, tostring
+local strgsub = string.gsub
 
 -- Global vars/functions that we don't upvalue since they might get hooked, or upgraded
 -- List them here for Mikk's FindGlobals script
@@ -21,6 +25,46 @@ local function errorhandler(err)
 	return geterrorhandler()(err)
 end
 
+local function CreateDispatcher(argCount)
+	local code = [[
+		local function errorhandler(err)
+			return geterrorhandler()(err)
+		end
+		local method, UP_ARGS
+		local function call() method(UP_ARGS) end
+		local function abc(handlers, ARGS)
+			local index
+			index, method = next(handlers)
+			if not method then return end
+			local OLD_ARGS = UP_ARGS
+			UP_ARGS = ARGS
+			repeat
+				xpcall(call, errorhandler)
+				index, method = next(handlers, index)
+			until not method
+			UP_ARGS = OLD_ARGS
+		end
+		return abc
+	]]
+	local ARGS = new("CallbackHandler -> CreateDispatcher "..tostring(argCount))
+	for i=1,argCount do ARGS[i]="c"..tostring(i) end
+	code = strgsub(code, "OLD_ARGS", tconcat(ARGS,',',1,argCount))
+	for i=1,argCount do ARGS[i]="b"..tostring(i) end
+	code = strgsub(code, "UP_ARGS", tconcat(ARGS,',',1,argCount))
+	for i=1,argCount do ARGS[i]="a"..tostring(i) end
+	code = strgsub(code, "ARGS", tconcat(ARGS,',',1,argCount))
+	del(ARGS,"CallbackHandler <- CreateDispatcher "..tostring(argCount))
+	return assert(loadstring(code, "safecall Dispatcher["..tostring(argCount).."]"))()
+end
+--DEFAULT_CHAT_FRAME:SetMaxLines(1024)
+--CreateDispatcher(0)
+--assert(false)
+local Dispatchers = setmetatable({}, {__index=function(self, argCount)
+	local dispatcher = CreateDispatcher(argCount)
+	rawset(self, argCount, dispatcher)
+	return dispatcher
+end})
+
 --------------------------------------------------------------------------
 -- CallbackHandler:New
 --
@@ -28,9 +72,6 @@ end
 --   RegisterName      - name of the callback registration API, default "RegisterCallback"
 --   UnregisterName    - name of the callback unregistration API, default "UnregisterCallback"
 --   UnregisterAllName - name of the API to unregister all callbacks, default "UnregisterAllCallbacks". false == don't publish this API.
-do
-local method, args
-local function call() return method(unpack(args)) end
 function CallbackHandler:New(target, RegisterName, UnregisterName, UnregisterAllName)
 
 	RegisterName = RegisterName or "RegisterCallback"
@@ -53,17 +94,7 @@ function CallbackHandler:New(target, RegisterName, UnregisterName, UnregisterAll
 		local oldrecurse = registry.recurse
 		registry.recurse = oldrecurse + 1
 
-		-- Ace3v: we do not use dispatch trick in vanilla
-		args = arg
-		local handlers = events[eventname]
-		local index
-		index, method = next(handlers)
-		if method then
-			repeat
-				xpcall(call, errorhandler)
-				index, method = next(handlers, index)
-			until not method
-		end
+		Dispatchers[tgetn(arg)+1](events[eventname], eventname, unpack(arg))
 
 		registry.recurse = oldrecurse
 
@@ -79,7 +110,9 @@ function CallbackHandler:New(target, RegisterName, UnregisterName, UnregisterAll
 						first = nil
 					end
 				end
+				del(callbacks, "CallbackHandler <- insertQueue["..eventname.."].callbaks")
 			end
+			del(registry.insertQueue, "CallbackHandler <- insertQueue")
 			registry.insertQueue = nil
 		end
 	end
@@ -145,7 +178,7 @@ function CallbackHandler:New(target, RegisterName, UnregisterName, UnregisterAll
 		else
 			-- we're currently processing a callback in this registry, so delay the registration of this new entry!
 			-- yes, we're a bit wasteful on garbage, but this is a fringe case, so we're picking low implementation overhead over garbage efficiency
-			registry.insertQueue = registry.insertQueue or setmetatable({},meta)
+			registry.insertQueue = registry.insertQueue or setmetatable(new("CallbackHandler -> insertQueue"),meta)
 			registry.insertQueue[eventname][self] = regfunc
 		end
 	end
@@ -160,9 +193,16 @@ function CallbackHandler:New(target, RegisterName, UnregisterName, UnregisterAll
 		end
 		if rawget(events, eventname) and events[eventname][self] then
 			events[eventname][self] = nil
+
 			-- Fire OnUnused callback?
 			if registry.OnUnused and not next(events[eventname]) then
 				registry.OnUnused(registry, target, eventname)
+			end
+
+			if rawget(events, eventname) and not next(events[eventname]) then
+				del(events[eventname], "CallbackHandler <- events["..eventname.."]")
+				events[eventname] = nil
+				dbg("SetNIL")
 			end
 		end
 		if registry.insertQueue and rawget(registry.insertQueue, eventname) and registry.insertQueue[eventname][self] then
@@ -172,17 +212,28 @@ function CallbackHandler:New(target, RegisterName, UnregisterName, UnregisterAll
 
 	-- OPTIONAL: Unregister all callbacks for given selfs/addonIds
 	if UnregisterAllName then
-		target[UnregisterAllName] = function(...)
-			local l = tgetn(arg)
-			if l == 0 then
-				error("Usage: "..UnregisterAllName.."([whatFor]): missing 'self' or \"addonId\" to unregister events for.", 2)
+		target[UnregisterAllName] = function(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+			if not a1 then
+				error("Usage: "..UnregisterAllName.."([whatFor]): missing 'self' or 'addonId' to unregister events for.", 2)
 			end
-			if arg[i]==target then
-				error("Usage: "..UnregisterAllName.."([whatFor]): supply a meaningful 'self' or \"addonId\"", 2)
+			if a1 == target then
+				error("Usage: "..UnregisterAllName.."([whatFor]): supply a meaningful 'self' or 'addonId'", 2)
 			end
 
-			for i=1,l do
+			local arg = new("CallbackHandler -> UnregisterAllName")
+			arg[1] = a1
+			arg[2] = a2
+			arg[3] = a3
+			arg[4] = a4
+			arg[5] = a5
+			arg[6] = a6
+			arg[7] = a7
+			arg[8] = a8
+			arg[9] = a9
+			arg[10] = a10
+			for i=1,10 do
 				local self = arg[i]
+				if not self then break end
 				if registry.insertQueue then
 					for eventname, callbacks in pairs(registry.insertQueue) do
 						if callbacks[self] then
@@ -200,12 +251,12 @@ function CallbackHandler:New(target, RegisterName, UnregisterName, UnregisterAll
 					end
 				end
 			end
+			del(arg,"CallbackHandler <- UnregisterAllName")
 		end
 	end
 
 	return registry
 end
-end -- CallbackHandler:New
 
 -- CallbackHandler purposefully does NOT do explicit embedding. Nor does it
 -- try to upgrade old implicit embeds since the system is selfcontained and

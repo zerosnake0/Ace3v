@@ -37,10 +37,11 @@ local function new(self, loop, func, delay, ...)
 	end
 
 	local timer = arg
-	timer.argsCount = tgetn(arg)
+
 	timer.object = self
 	timer.func = func
 	timer.looping = loop
+	timer.argsCount = tgetn(arg)
 	timer.delay = delay
 	timer.ends = GetTime() + delay
 

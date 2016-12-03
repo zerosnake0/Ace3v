@@ -9,21 +9,61 @@ local strsub, strgsub = string.sub, string.gsub
 local tremove, tconcat = table.remove, table.concat
 local tgetn, tsetn = table.getn, table.setn
 
-local CreateDispatcher
+-- Debug util function, may be no longer necessary when finished
+function dbg(...)
+	for i=1,tgetn(arg) do
+		arg[i] = tostring(arg[i])
+	end
+	DEFAULT_CHAT_FRAME:AddMessage(table.concat(arg,","))
+end
+
+local new, del
 do
-local ARGS_ = {}
-function CreateDispatcher(argCount)
+local list = setmetatable({}, {__mode = "k"})
+function new(dbgmsg)
+	DEFAULT_CHAT_FRAME:AddMessage(">>>>>>>>>>>>>>>>>>>"..(dbgmsg or ''))
+	if not dbgmsg then dbg(debugstack()) end
+	local t = next(list)
+	if not t then
+		return {}
+	end
+	list[t] = nil
+	return t
+end
+
+function del(t,dbgmsg)
+	DEFAULT_CHAT_FRAME:AddMessage("<<<<<<<<<<<<<<<<<<<"..(dbgmsg or ''))
+	setmetatable(t, nil)
+	for k in pairs(t) do
+		t[k] = nil
+	end
+	tsetn(t,0)
+	list[t] = true
+end
+
+-- debug
+function AceCore.listcount()
+	local count = 0
+	for k in list do
+		count = count + 1
+	end
+	return count
+end
+end	-- AceCore.new, AceCore.del
+AceCore.new, AceCore.del = new, del
+
+local function CreateDispatcher(argCount)
 	local code = [[
 		return function(func,ARGS)
 			return func(ARGS)
 		end
 	]]
-	for i=tgetn(ARGS_)+1,argCount do ARGS_[i]="a"..tostring(i) end
-	code = strgsub(code, "ARGS", tconcat(ARGS_,',',1,argCount))
-	DEFAULT_CHAT_FRAME:AddMessage(code)
+	local ARGS = new("AceCore CreateDispatcher -> "..tostring(argCount))
+	for i=1,argCount do ARGS[i]="a"..tostring(i) end
+	code = strgsub(code, "ARGS", tconcat(ARGS,',',1,argCount))
+	del(ARGS, "AceCore CreateDispatcher <- "..tostring(argCount))
 	return assert(loadstring(code, "call Dispatcher["..tostring(argCount).."]"))()
 end
-end	-- CreateDispatcher
 
 local Dispatchers = setmetatable({}, {__index=function(self, argCount)
 	local dispatcher = CreateDispatcher(argCount)
@@ -128,32 +168,3 @@ function AceCore.truncate(t,e)
 	end
 	tsetn(t,e)
 end
-
--- Some util function, may be no longer necessary when finished
-function dbg(...)
-	for i=1,tgetn(arg) do
-		arg[i] = tostring(arg[i])
-	end
-	DEFAULT_CHAT_FRAME:AddMessage(table.concat(arg,","))
-end
-
-do
-local list = setmetatable({}, {__mode = "k"})
-function AceCore.new()
-	local t = next(list)
-	if not t then
-		return {}
-	end
-	list[t] = nil
-	return t
-end
-
-function AceCore.del(t)
-	setmetatable(t, nil)
-	for k in pairs(t) do
-		t[k] = nil
-	end
-	tsetn(t,0)
-	list[t] = true
-end
-end	-- AceCore.new, AceCore.del

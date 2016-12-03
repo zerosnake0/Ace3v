@@ -47,6 +47,7 @@ local AceDB, oldminor = LibStub:NewLibrary(ACEDB_MAJOR, ACEDB_MINOR)
 if not AceDB then return end -- No upgrade needed
 
 local AceCore = LibStub("AceCore-3.0")
+local new, del = AceCore.new, AceCore.del
 
 -- Lua APIs
 local type, pairs, next, error = type, pairs, next, error
@@ -225,8 +226,7 @@ local dbmt = {
 			local defaults = defaultTbl and defaultTbl[section]
 
 			if section == "profile" then
-				local new = initSection(t, section, "profiles", key, defaults)
-				if new then
+				if initSection(t, section, "profiles", key, defaults) then
 					-- Callback: OnNewProfile, database, newProfileKey
 					t.callbacks:Fire("OnNewProfile", t, key)
 				end

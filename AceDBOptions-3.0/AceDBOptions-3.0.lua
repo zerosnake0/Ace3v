@@ -241,8 +241,8 @@ local defaultProfiles
 -- @param nocurrent If true, then getProfileList will not display the current profile in the list
 -- @return Hashtable of all profiles with the internal name as keys and the display name as value.
 local function getProfileList(db, common, nocurrent)
-	local profiles = new()
-	local tmpprofiles = new()
+	local profiles = new("AceDBOptions getProfileList -> profiles")
+	local tmpprofiles = new("AceDBOptions getProfileList -> tmpprofiles")
 	-- copy existing profiles into the table
 	local currentProfile = db:GetCurrentProfile()
 	for i,v in pairs(db:GetProfiles(tmpprofiles)) do 
@@ -250,7 +250,7 @@ local function getProfileList(db, common, nocurrent)
 			profiles[v] = v 
 		end 
 	end
-	del(tmpprofiles)
+	del(tmpprofiles,"AceDBOptions getProfileList <- tmpprofiles")
 	
 	-- add our default profiles to choose from ( or rename existing profiles)
 	for k,v in pairs(defaultProfiles) do
@@ -314,7 +314,7 @@ end
 function OptionsHandlerPrototype:HasNoProfiles(info)
 	local profiles = self:ListProfiles(info)
 	local r = (not next(profiles)) and true or false
-	del(profiles)
+	del(profiles,"AceDBOptions getProfileList <- profiles")
 	return r
 end
 

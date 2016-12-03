@@ -10,6 +10,7 @@ local AceTab, oldminor = LibStub:NewLibrary(ACETAB_MAJOR, ACETAB_MINOR)
 if not AceTab then return end -- No upgrade needed
 
 local AceCore = LibStub("AceCore-3.0")
+local new, del = AceCore.new, AceCore.del
 
 AceTab.registry = AceTab.registry or {}
 
@@ -26,10 +27,6 @@ local strsub = string.sub
 local strlower = string.lower
 local strformat = string.format
 local strlen = string.len
-
-local function printf(...)
-	DEFAULT_CHAT_FRAME:AddMessage(strformat(unpack(arg)))
-end
 
 local function getCursorPosition(this)
 	local ost = this:GetScript("OnTextSet")
@@ -59,13 +56,14 @@ local function hookFrame(f)
 	if type(origOTP) ~= 'function' then
 		origOTP = function() end
 	end
-	f:SetScript('OnTabPressed', function(...)
+	f:SetScript('OnTabPressed', function()
+		-- Ace3v: tested no arguments given
 		if AceTab:OnTabPressed(f) then
-			return origOTP(unpack(arg))
+			return origOTP()
 		end
 	end)
 	f.at3curMatch = 0
-	f.at3matches = {}
+	f.at3matches = new("AceTab -> at3matches")
 end
 
 local firstPMLength
@@ -114,7 +112,7 @@ function AceTab:RegisterTabCompletion(descriptor, prematches, wordlist, usagefun
 		pmtable = prematches
 		notfallbacks[descriptor] = true
 	else
-		pmtable = {}
+		pmtable = new("AceTab -> prematches")
 		-- Mark this group as a fallback group if no value was passed.
 		if not prematches then
 			pmtable[1] = ""
@@ -156,7 +154,14 @@ function AceTab:RegisterTabCompletion(descriptor, prematches, wordlist, usagefun
 
 	-- Everything checks out; register this completion.
 	if not registry[descriptor] then
-		registry[descriptor] = { prematches = pmtable, wordlist = wordlist, usagefunc = usagefunc, listenframes = listenframes, postfunc = postfunc, pmoverwrite = pmoverwrite }
+		local tmp = new("AceTab -> registry[descriptor]")
+		tmp.prematches = pmtable
+		tmp.wordlist = wordlist
+		tmp.usagefunc = usagefunc
+		tmp.listenframes = listenframes
+		tmp.postfunc = postfunc
+		tmp.pmoverwrite = pmoverwrite
+		registry[descriptor] = tmp
 	end
 end
 
@@ -165,10 +170,15 @@ function AceTab:IsTabCompletionRegistered(descriptor)
 end
 
 function AceTab:UnregisterTabCompletion(descriptor)
+	local tmp = registry[descriptor]
+	if tmp then
+		del(tmp.prematches, "AceTab <- prematches")
+		del(tmp, "AceTab <- registry[descriptor]")
+	end
 	registry[descriptor] = nil
-	pmolengths[descriptor] = nil
-	fallbacks[descriptor] = nil
-	notfallbacks[descriptor] = nil
+	pmolengths[descriptor] = nil	-- number values
+	fallbacks[descriptor] = nil		-- bool values
+	notfallbacks[descriptor] = nil	-- bool values
 end
 
 -- ------------------------------------------------------------------------------
@@ -291,12 +301,13 @@ local function fillMatches(this, desc, fallback)
 					-- We're either a non-fallback set or all completions thus far have been fallback sets, and the precondition matches.
 					-- Create cands from the registered wordlist, filling it with all potential (unfiltered) completion strings.
 					local wordlist = entry.wordlist
-					local cands = type(wordlist) == 'table' and wordlist or {}
+					local cands = type(wordlist) == 'table' and wordlist or false
 					if type(wordlist) == 'function' then
+						cands = new("AceTab -> cands")
 						wordlist(cands, text_all, prematchEnd + 1, text_pmendToCursor)
 					end
 					if cands ~= false then
-						matches = this.at3matches[desc] or {}
+						matches = this.at3matches[desc] or new("AceTab -> matches")
 						for i in pairs(matches) do matches[i] = nil end
 
 						-- Check each of the entries in cands to see if it completes the word before the cursor.
@@ -312,7 +323,15 @@ local function fillMatches(this, desc, fallback)
 								end
 							end
 						end
-						this.at3matches[desc] = numMatches > 0 and matches or nil
+						if numMatches > 0 then
+							this.at3matches[desc] = matches
+						else
+							del(matches, "AceTab <- matches")
+							this.at3matches[desc] = nil
+						end
+					end
+					if type(wordlist) == 'function' then
+						del(cands, "AceTab <- cands")
 					end
 				end
 			end

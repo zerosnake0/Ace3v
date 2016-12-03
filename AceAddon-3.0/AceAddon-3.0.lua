@@ -36,6 +36,7 @@ local AceAddon, oldminor = LibStub:NewLibrary(MAJOR, MINOR)
 if not AceAddon then return end -- No Upgrade needed.
 
 local AceCore = LibStub("AceCore-3.0")
+local new, del = AceCore.new, AceCore.del
 local Dispatchers = AceCore.Dispatchers
 local wipe, truncate = AceCore.wipe, AceCore.truncate
 
@@ -93,8 +94,6 @@ end
 -- -- Create a Addon object based on the table of a frame
 -- local MyFrame = CreateFrame("Frame")
 -- MyAddon = LibStub("AceAddon-3.0"):NewAddon(MyFrame, "MyAddon", "AceEvent-3.0")
-do
-local args = {nil,nil,nil,nil,nil,nil,nil,nil,nil,nil}
 function AceAddon:NewAddon(objectorname,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 
 	local object,name
@@ -111,6 +110,7 @@ function AceAddon:NewAddon(objectorname,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 		error(strfmt("Usage: NewAddon([object,] name, [lib, lib, lib, ...]): 'name' - Addon '%s' already exists.", name), 2)
 	end
 
+	local args = new("AceAddon:NewAddon ->")
 	args[1] = a1
 	args[2] = a2
 	args[3] = a3
@@ -143,12 +143,12 @@ function AceAddon:NewAddon(objectorname,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	elseif a0 then
 		self:EmbedLibraries(object,a0,args)
 	end
+	del(args,"AceAddon:NewAddon <-")
 
 	-- add to queue of addons to be initialized upon ADDON_LOADED
 	tinsert(self.initializequeue, object)
 	return object
 end
-end	-- AceAddon:NewAddon
 
 --- Get the addon object by its name from the internal AceAddon registry.
 -- Throws an error if the addon object cannot be found (except if silent is set).
@@ -241,8 +241,6 @@ local function IsModuleTrue(self) return true end
 -- -- Create a module with a prototype
 -- local prototype = { OnEnable = function(self) print("OnEnable called!") end }
 -- MyModule = MyAddon:NewModule("MyModule", prototype, "AceEvent-3.0", "AceHook-3.0")
-do
-local args = {nil,nil,nil,nil,nil,nil,nil,nil,nil,nil}
 function NewModule(self, name, prototype, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	if type(name) ~= "string" then error(strfmt("Usage: NewModule(name, [prototype, [lib, lib, lib, ...]): 'name' - string expected got '%s'.", type(name)), 2) end
 	if type(prototype) ~= "string" and type(prototype) ~= "table" and type(prototype) ~= "nil" then error(strfmt("Usage: NewModule(name, [prototype, [lib, lib, lib, ...]): 'prototype' - table (prototype), string (lib) or nil expected got '%s'.", type(prototype)), 2) end
@@ -257,6 +255,7 @@ function NewModule(self, name, prototype, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	module:SetEnabledState(self.defaultModuleState)
 	module.moduleName = name
 
+	local args = new()
 	args[1] = a1
 	args[2] = a2
 	args[3] = a3
@@ -273,7 +272,8 @@ function NewModule(self, name, prototype, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	else
 		AceAddon:EmbedLibraries(module, nil, args)
 	end
-	AceAddon:EmbedLibraries(module, unpack(self.defaultModuleLibraries))
+	del(args)
+	AceAddon:EmbedLibraries(module, nil, self.defaultModuleLibraries)
 
 	if not prototype or type(prototype) == "string" then
 		prototype = self.defaultModulePrototype or nil
@@ -291,7 +291,6 @@ function NewModule(self, name, prototype, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 
 	return module
 end
-end	-- NewModule
 
 --- Returns the real name of the addon or module, without any prefix.
 -- @name //addon//:GetName
