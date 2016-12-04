@@ -52,44 +52,54 @@ end
 end	-- AceCore.new, AceCore.del
 AceCore.new, AceCore.del = new, del
 
-local function CreateDispatcher(argCount)
-	local code = [[
-		return function(func,ARGS)
-			return func(ARGS)
-		end
-	]]
-	local ARGS = new("AceCore CreateDispatcher -> "..tostring(argCount))
-	for i=1,argCount do ARGS[i]="a"..tostring(i) end
-	code = strgsub(code, "ARGS", tconcat(ARGS,',',1,argCount))
-	del(ARGS, "AceCore CreateDispatcher <- "..tostring(argCount))
-	return assert(loadstring(code, "call Dispatcher["..tostring(argCount).."]"))()
-end
-
-local Dispatchers = setmetatable({}, {__index=function(self, argCount)
-	local dispatcher = CreateDispatcher(argCount)
-	rawset(self, argCount, dispatcher)
-	return dispatcher
-end})
-AceCore.Dispatchers = Dispatchers
-
 local function errorhandler(err)
 	return geterrorhandler()(err)
 end
 AceCore.errorhandler = errorhandler
 
-do
-local method, args
-local function call() return method(unpack(args)) end
-function AceCore.safecall(func, ...)
+local function CreateDispatcher(argCount)
+	local code = [[
+		local errorhandler = LibStub("AceCore-3.0").errorhandler
+		local method, UP_ARGS
+		local function call()
+			local func, ARGS = method, UP_ARGS
+			method, UP_ARGS = nil, NILS
+			return func(ARGS)
+		end
+		return function(func, ARGS)
+			method, UP_ARGS = func, ARGS
+			return xpcall(call, errorhandler)
+		end
+	]]
+	local c = 4*argCount-1
+	local s = "b01,b02,b03,b04,b05,b06,b07,b08,b09,b10"
+	code = strgsub(code, "UP_ARGS", string.sub(s,1,c))
+	s = "a01,a02,a03,a04,a05,a06,a07,a08,a09,a10"
+	code = strgsub(code, "ARGS", string.sub(s,1,c))
+	s = "nil,nil,nil,nil,nil,nil,nil,nil,nil,nil"
+	code = strgsub(code, "NILS", string.sub(s,1,c))
+	return assert(loadstring(code, "safecall Dispatcher["..tostring(argCount).."]"))()
+end
+
+local Dispatchers = setmetatable({}, {__index=function(self, argCount)
+	local dispatcher
+	if argCount > 0 then
+		dispatcher = CreateDispatcher(argCount)
+	else
+		dispatcher = function(func) return xpcall(func,errorhandler) end
+	end
+	rawset(self, argCount, dispatcher)
+	return dispatcher
+end})
+
+function AceCore.safecall(func,argc,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	-- we check to see if the func is passed is actually a function here and don't error when it isn't
 	-- this safecall is used for optional functions like OnInitialize OnEnable etc. When they are not
 	-- present execution should continue without hinderance
 	if type(func) == "function" then
-		method, args = func, arg
-		return xpcall(call, errorhandler)
+		return Dispatchers[argc](func,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	end
 end
-end	-- AceCore.safecall
 
 -- some string functions
 -- vanilla available string operations:

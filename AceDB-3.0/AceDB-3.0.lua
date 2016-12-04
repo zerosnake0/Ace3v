@@ -272,6 +272,9 @@ local realmKey = GetRealmName()
 local charKey = UnitName("player") .. " - " .. realmKey
 local _, classKey = UnitClass("player")
 local _, raceKey = UnitRace("player")
+local _, factionKey = UnitFactionGroup("player")
+-- Ace3v: the faction key may error when in GM mode
+factionKey = factionKey or "Others"
 local localeKey = string.lower(GetLocale())
 
 -- Actual database initialization function
@@ -307,9 +310,8 @@ local function initdb(sv, defaults, defaultProfile, olddb, parent)
 		["realm"] = realmKey,
 		["class"] = classKey,
 		["race"] = raceKey,
-		-- Ace3v: must put here or error when character log in
-		["faction"] = UnitFactionGroup("player"),
-		["factionrealm"] = UnitFactionGroup("player") .. " - " .. realmKey,
+		["faction"] = factionKey,
+		["factionrealm"] = factionKey .. " - " .. realmKey,
 		["profile"] = profileKey,
 		["locale"] = localeKey,
 		["global"] = true,

@@ -76,9 +76,9 @@ local function FireBucket(bucket)
 	if next(received) then
 		local callback = bucket.callback
 		if type(callback) == "string" then
-			safecall(bucket.object[callback], bucket.object, received)
+			safecall(bucket.object[callback], 2, bucket.object, received)
 		else
-			safecall(callback, received)
+			safecall(callback, 1, received)
 		end
 		
 		for k in pairs(received) do

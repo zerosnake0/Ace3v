@@ -7,10 +7,10 @@ if not CallbackHandler then return end -- No upgrade needed
 local AceCore = LibStub("AceCore-3.0")
 local new, del = AceCore.new, AceCore.del
 
-local meta = {__index = function(tbl, key) rawset(tbl, key ,new("CallbackHandler -> events["..tostring(key).."]")) return tbl[key] end}
+local meta = {__index = function(tbl, key) rawset(tbl, key, new("CallbackHandler -> events["..tostring(key).."]")) return tbl[key] end}
 
 -- Lua APIs
-local tconcat, tinsert, tgetn = table.concat, table.insert, table.getn
+local tconcat, tinsert, tgetn, tsetn = table.concat, table.insert, table.getn, table.setn
 local assert, error, loadstring = assert, error, loadstring
 local setmetatable, rawset, rawget = setmetatable, rawset, rawget
 local next, pairs, type, tostring = next, pairs, type, tostring
@@ -27,38 +27,34 @@ end
 
 local function CreateDispatcher(argCount)
 	local code = [[
-		local function errorhandler(err)
-			return geterrorhandler()(err)
-		end
+		local errorhandler = LibStub("AceCore-3.0").errorhandler
 		local method, UP_ARGS
-		local function call() method(UP_ARGS) end
-		local function abc(handlers, ARGS)
+		local function call()
+			local func, ARGS = method, UP_ARGS
+			method, UP_ARGS = nil, NILS
+			return func(ARGS)
+		end
+		return function(handlers, ARGS)
 			local index
 			index, method = next(handlers)
 			if not method then return end
-			local OLD_ARGS = UP_ARGS
-			UP_ARGS = ARGS
 			repeat
+				UP_ARGS = ARGS
 				xpcall(call, errorhandler)
 				index, method = next(handlers, index)
 			until not method
-			UP_ARGS = OLD_ARGS
 		end
-		return abc
 	]]
-	local ARGS = new("CallbackHandler -> CreateDispatcher "..tostring(argCount))
-	for i=1,argCount do ARGS[i]="c"..tostring(i) end
-	code = strgsub(code, "OLD_ARGS", tconcat(ARGS,',',1,argCount))
-	for i=1,argCount do ARGS[i]="b"..tostring(i) end
-	code = strgsub(code, "UP_ARGS", tconcat(ARGS,',',1,argCount))
-	for i=1,argCount do ARGS[i]="a"..tostring(i) end
-	code = strgsub(code, "ARGS", tconcat(ARGS,',',1,argCount))
-	del(ARGS,"CallbackHandler <- CreateDispatcher "..tostring(argCount))
+	local c = 4*argCount-1
+	local s = "b01,b02,b03,b04,b05,b06,b07,b08,b09,b10"
+	code = strgsub(code, "UP_ARGS", string.sub(s,1,c))
+	s = "a01,a02,a03,a04,a05,a06,a07,a08,a09,a10"
+	code = strgsub(code, "ARGS", string.sub(s,1,c))
+	s = "nil,nil,nil,nil,nil,nil,nil,nil,nil,nil"
+	code = strgsub(code, "NILS", string.sub(s,1,c))
 	return assert(loadstring(code, "safecall Dispatcher["..tostring(argCount).."]"))()
 end
---DEFAULT_CHAT_FRAME:SetMaxLines(1024)
---CreateDispatcher(0)
---assert(false)
+
 local Dispatchers = setmetatable({}, {__index=function(self, argCount)
 	local dispatcher = CreateDispatcher(argCount)
 	rawset(self, argCount, dispatcher)
@@ -202,7 +198,6 @@ function CallbackHandler:New(target, RegisterName, UnregisterName, UnregisterAll
 			if rawget(events, eventname) and not next(events[eventname]) then
 				del(events[eventname], "CallbackHandler <- events["..eventname.."]")
 				events[eventname] = nil
-				dbg("SetNIL")
 			end
 		end
 		if registry.insertQueue and rawget(registry.insertQueue, eventname) and registry.insertQueue[eventname][self] then
@@ -220,38 +215,39 @@ function CallbackHandler:New(target, RegisterName, UnregisterName, UnregisterAll
 				error("Usage: "..UnregisterAllName.."([whatFor]): supply a meaningful 'self' or 'addonId'", 2)
 			end
 
-			local arg = new("CallbackHandler -> UnregisterAllName")
-			arg[1] = a1
-			arg[2] = a2
-			arg[3] = a3
-			arg[4] = a4
-			arg[5] = a5
-			arg[6] = a6
-			arg[7] = a7
-			arg[8] = a8
-			arg[9] = a9
-			arg[10] = a10
+			-- use our registry table as argument table
+			registry[1] = a1
+			registry[2] = a2
+			registry[3] = a3
+			registry[4] = a4
+			registry[5] = a5
+			registry[6] = a6
+			registry[7] = a7
+			registry[8] = a8
+			registry[9] = a9
+			registry[10] = a10
 			for i=1,10 do
-				local self = arg[i]
-				if not self then break end
-				if registry.insertQueue then
-					for eventname, callbacks in pairs(registry.insertQueue) do
-						if callbacks[self] then
-							callbacks[self] = nil
+				local self = registry[i]
+				registry[i] = nil
+				if self then
+					if registry.insertQueue then
+						for eventname, callbacks in pairs(registry.insertQueue) do
+							if callbacks[self] then
+								callbacks[self] = nil
+							end
 						end
 					end
-				end
-				for eventname, callbacks in pairs(events) do
-					if callbacks[self] then
-						callbacks[self] = nil
-						-- Fire OnUnused callback?
-						if registry.OnUnused and not next(callbacks) then
-							registry.OnUnused(registry, target, eventname)
+					for eventname, callbacks in pairs(events) do
+						if callbacks[self] then
+							callbacks[self] = nil
+							-- Fire OnUnused callback?
+							if registry.OnUnused and not next(callbacks) then
+								registry.OnUnused(registry, target, eventname)
+							end
 						end
 					end
 				end
 			end
-			del(arg,"CallbackHandler <- UnregisterAllName")
 		end
 	end
 

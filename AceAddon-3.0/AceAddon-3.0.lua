@@ -37,7 +37,6 @@ if not AceAddon then return end -- No Upgrade needed.
 
 local AceCore = LibStub("AceCore-3.0")
 local new, del = AceCore.new, AceCore.del
-local Dispatchers = AceCore.Dispatchers
 local wipe, truncate = AceCore.wipe, AceCore.truncate
 
 AceAddon.frame = AceAddon.frame or CreateFrame("Frame", "AceAddon30Frame") -- Our very own frame
@@ -285,7 +284,7 @@ function NewModule(self, name, prototype, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 		setmetatable(module, mt)  -- More of a Base class type feel.
 	end
 
-	safecall(self.OnModuleCreated, self, module) -- Was in Ace2 and I think it could be a cool thing to have handy.
+	safecall(self.OnModuleCreated, 2, self, module) -- Was in Ace2 and I think it could be a cool thing to have handy.
 	self.modules[name] = module
 	tinsert(self.orderedModules, module)
 
@@ -531,12 +530,12 @@ end
 -- **Note:** Do not call this function manually, unless you're absolutely sure that you know what you are doing.
 -- @param addon addon object to intialize
 function AceAddon:InitializeAddon(addon)
-	safecall(addon.OnInitialize, addon)
+	safecall(addon.OnInitialize, 1, addon)
 
 	local embeds = self.embeds[addon]
 	for i = 1, tgetn(embeds) do
 		local lib = LibStub:GetLibrary(embeds[i], true)
-		if lib then safecall(lib.OnEmbedInitialize, lib, addon) end
+		if lib then safecall(lib.OnEmbedInitialize, 2, lib, addon) end
 	end
 
 	-- we don't call InitializeAddon on modules specifically, this is handled
@@ -560,14 +559,14 @@ function AceAddon:EnableAddon(addon)
 	-- set the statuses first, before calling the OnEnable. this allows for Disabling of the addon in OnEnable.
 	self.statuses[addon.name] = true
 
-	safecall(addon.OnEnable, addon)
+	safecall(addon.OnEnable, 1, addon)
 
 	-- make sure we're still enabled before continueing
 	if self.statuses[addon.name] then
 		local embeds = self.embeds[addon]
 		for i = 1, tgetn(embeds) do
 			local lib = LibStub:GetLibrary(embeds[i], true)
-			if lib then safecall(lib.OnEmbedEnable, lib, addon) end
+			if lib then safecall(lib.OnEmbedEnable, 2, lib, addon) end
 		end
 
 		-- enable possible modules.
@@ -595,14 +594,14 @@ function AceAddon:DisableAddon(addon)
 	-- set statuses first before calling OnDisable, this allows for aborting the disable in OnDisable.
 	self.statuses[addon.name] = false
 
-	safecall( addon.OnDisable, addon )
+	safecall(addon.OnDisable, 1, addon)
 
 	-- make sure we're still disabling...
 	if not self.statuses[addon.name] then
 		local embeds = self.embeds[addon]
 		for i = 1, tgetn(embeds) do
 			local lib = LibStub:GetLibrary(embeds[i], true)
-			if lib then safecall(lib.OnEmbedDisable, lib, addon) end
+			if lib then safecall(lib.OnEmbedDisable, 2, lib, addon) end
 		end
 		-- disable possible modules.
 		local modules = addon.orderedModules
@@ -681,14 +680,4 @@ AceAddon.frame:SetScript("OnEvent", onEvent)
 -- upgrade embeded
 for name, addon in pairs(AceAddon.addons) do
 	Embed(addon, true)
-end
-
--- 2010-10-27 nevcairiel - add new "orderedModules" table
-if oldminor and oldminor < 10 then
-	for name, addon in pairs(AceAddon.addons) do
-		addon.orderedModules = {}
-		for module_name, module in pairs(addon.modules) do
-			tinsert(addon.orderedModules, module)
-		end
-	end
 end

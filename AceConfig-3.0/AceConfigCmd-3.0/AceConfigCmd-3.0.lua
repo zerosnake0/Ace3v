@@ -25,7 +25,6 @@ local strtrim = AceCore.strtrim
 local strsplit = AceCore.strsplit
 local new, del = AceCore.new, AceCore.del
 local wipe = AceCore.wipe
-local Dispatchers = AceCore.Dispatchers
 
 AceConfigCmd.commands = AceConfigCmd.commands or {}
 AceConfigCmd.embeds = AceConfigCmd.embeds or {}
@@ -88,6 +87,28 @@ end
 
 
 -- callmethod() - call a given named method (e.g. "get", "set") with given arguments
+
+local function CreateDispatcher(argCount)
+	local code = [[
+		return function(func,ARGS)
+			return func(ARGS)
+		end
+	]]
+	local s = "a01,a02,a03,a04,a05,a06,a07,a08,a09,a10"
+	code = strgsub(code, "ARGS", string.sub(s,1,4*argCount-1))
+	return assert(loadstring(code, "call Dispatcher["..tostring(argCount).."]"))()
+end
+
+local Dispatchers = setmetatable({}, {__index=function(self, argCount)
+	local dispatcher
+	if argCount > 0 then
+		dispatcher = CreateDispatcher(argCount)
+	else
+		dispatcher = function(func) return func() end
+	end
+	rawset(self, argCount, dispatcher)
+	return dispatcher
+end})
 
 local function callmethod(info, inputpos, tab, methodtype, argc, a1, a2, a3, a4)
 	local method = info[methodtype]
@@ -189,17 +210,21 @@ local function iterateargs(tab)
 	end
 end
 
+local function getValueFromTab(info, inputpos, tab, key)
+	local v = tab[key]
+	if type(v) == "function" or type(v) == "string" then
+		info[key] = v
+		v = callmethod(info, inputpos, tab, key)
+		info[key] = nil
+	end
+	return v
+end
+
 local function checkhidden(info, inputpos, tab)
 	if tab.cmdHidden~=nil then
 		return tab.cmdHidden
 	end
-	local hidden = tab.hidden
-	if type(hidden) == "function" or type(hidden) == "string" then
-		info.hidden = hidden
-		hidden = callmethod(info, inputpos, tab, 'hidden')
-		info.hidden = nil
-	end
-	return hidden
+	return getValueFromTab(info, inputpos, tab, "hidden")
 end
 
 local function showhelp(info, inputpos, tab, depth, noHead)
@@ -268,16 +293,6 @@ local function showhelp(info, inputpos, tab, depth, noHead)
 	end
 	del(sortTbl, "AceConfigCmd showhelp <- 1")	-- Ace3v: release the tables
 	del(refTbl, "AceConfigCmd showhelp <- 2")
-end
-
-local function getValueFromTab(info, inputpos, tab, key)
-	local v = tab[key]
-	if type(v) == "function" or type(v) == "string" then
-		info[key] = v
-		v = callmethod(info, inputpos, tab, key)
-		info[key] = nil
-	end
-	return v
 end
 
 local function keybindingValidateFunc(text)
