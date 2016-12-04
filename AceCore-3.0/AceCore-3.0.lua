@@ -3,8 +3,8 @@ local AceCore, oldminor = LibStub:NewLibrary(ACECORE_MAJOR, ACECORE_MINOR)
 
 if not AceCore then return end -- No upgrade needed
 
-local _G = getfenv(0)
-AceCore._G = _G
+AceCore._G = AceCore._G or getfenv(0)
+local _G = AceCore._G
 local strsub, strgsub = string.sub, string.gsub
 local tremove, tconcat = table.remove, table.concat
 local tgetn, tsetn = table.getn, table.setn

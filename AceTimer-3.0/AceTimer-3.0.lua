@@ -32,6 +32,7 @@ AceTimer.frame = AceTimer.frame or CreateFrame("Frame", "AceTimer30Frame")
 
 local counter = AceTimer.counter
 local activeTimers = AceTimer.activeTimers -- Upvalue our private data
+local timerFrame = AceTimer.frame
 
 -- Lua APIs
 local type, unpack, next, error = type, unpack, next, error
@@ -92,13 +93,13 @@ function new(self, loop, func, delay, argc,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	-- Create and stuff timer in the correct hash bucket
 	local now = GetTime()
 
-	DEFAULT_CHAT_FRAME:AddMessage(">>>>>>>>>>>>>>>>> timer")
 	local timer = next(list) or {}
 	list[timer] = nil
 
 	timer.object = self
 	timer.func = func
-	timer.delay = loop and delay or nil
+	timer.delay = delay
+	timer.status = loop and "loop" or "once"
 	timer.ends = now + delay
 	timer.argsCount = argc or 0
 	timer[1] = a1
@@ -115,17 +116,26 @@ function new(self, loop, func, delay, argc,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	local bucket = floor(mod((now+delay)*HZ,BUCKETS)) + 1
 	timer.next = hash[bucket]
 	hash[bucket] = timer
-	activeTimers[timer] = timer
+
+	local id = tostring(timer)	-- user has only access to the id but not the table itself
+	activeTimers[id] = timer
 
 	counter[self] = (counter[self] or 0) + 1
 
-	return timer
+	DEFAULT_CHAT_FRAME:AddMessage(">>>>>>>>>>>>>>>>> timer "..id)
+	timerFrame:Show()
+	return id
 end
 
 function del(t)
-	DEFAULT_CHAT_FRAME:AddMessage("<<<<<<<<<<<<<<<<< timer")
+	local id = tostring(t)
+	DEFAULT_CHAT_FRAME:AddMessage("<<<<<<<<<<<<<<<<< timer "..id)
+	activeTimers[id] = nil
+	if not next(activeTimers) then
+		DEFAULT_CHAT_FRAME:AddMessage("Last timer ended")
+		timerFrame:Hide()
+	end
 	local self = t.object
-	activeTimers[t] = nil
 	for k in pairs(t) do t[k] = nil end
 	list[t] = true
 	if counter[self] then
@@ -140,7 +150,8 @@ end	-- new, del
 -- The timer will fire once in `delay` seconds, unless canceled before.
 -- @param callback Callback function for the timer pulse (funcref or method name).
 -- @param delay Delay for the timer, in seconds.
--- @param ... An optional, unlimited amount of arguments to pass to the callback function.
+-- @param argc The numbers of arguments to be passed to the callback function
+-- @param a1,...,a10 The arguments
 -- @usage
 -- MyAddOn = LibStub("AceAddon-3.0"):NewAddon("MyAddOn", "AceTimer-3.0")
 --
@@ -191,7 +202,10 @@ function AceTimer:CancelTimer(id)
 	if not timer then
 		return false
 	else
-		timer.cancelled = true
+		-- Ace3v: the timer will always be collected in the next update but not here
+		-- this is necessary for AceBucket to determinate if the bucket has been unregistered
+		-- in the callback
+		timer.status = nil
 		activeTimers[id] = nil
 		return true
 	end
@@ -223,6 +237,15 @@ function AceTimer:TimeLeft(id)
 		return 0
 	else
 		return timer.ends - GetTime()
+	end
+end
+
+function AceTimer:TimerStatus(id)
+	local timer = activeTimers[id]
+	if not timer then
+		return nil
+	else
+		return timer.status
 	end
 end
 
@@ -282,23 +305,22 @@ local function OnUpdate()
 		while nexttimer do
 			local timer = nexttimer
 			nexttimer = timer.next
-
-			if timer.cancelled then
+			local status = timer.status
+			if not status then
 				del(timer)
 			else
 				local ends = timer.ends
-
-				if ends < soon then
+				if (status == "loop" or status == "once") and ends < soon then
 					local object = timer.object
 					local callback = timer.func
 					if type(callback) == "string" then
-						callback = object[callback]
+						callback = (type(object) == "table") and object[callback]
 						if type(callback) == "function" then
 							safecall(callback, timer.argsCount+1, object,
 								timer[1], timer[2], timer[3], timer[4], timer[5],
 								timer[6], timer[7], timer[8], timer[9], timer[10])
 						else
-							timer.delay = nil
+							status = "once"
 						end
 					elseif type(callback) == "function" then
 						safecall(callback, timer.argsCount,
@@ -306,14 +328,13 @@ local function OnUpdate()
 							timer[6], timer[7], timer[8], timer[9], timer[10])
 					else
 						-- probably nilled out by CancelTimer
-						timer.delay = nil	-- don't reschedule it
+						status = "once"	-- don't reschedule it
 					end
 
-					local delay = timer.delay	-- NOW make a local copy, can't do it earlier in case the timer cancelled itself in the callback
-
-					if not delay then
+					if status == "once" then
 						del(timer)
 					else
+						local delay = timer.delay
 						local newends = ends + delay
 						if newends < now then	-- Keep lag from making us firing a timer unnecessarily. (Note that this still won't catch too-short-delay timers though.)
 							newends = now + delay
@@ -355,6 +376,7 @@ local function OnEvent()
 	end
 end
 
-AceTimer.frame:SetScript("OnUpdate", OnUpdate)
-AceTimer.frame:SetScript("OnEvent", OnEvent)
-AceTimer.frame:RegisterEvent("PLAYER_REGEN_ENABLED")
+timerFrame:SetScript("OnUpdate", OnUpdate)
+timerFrame:SetScript("OnEvent", OnEvent)
+timerFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+timerFrame:Hide()
