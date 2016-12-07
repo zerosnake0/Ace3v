@@ -279,7 +279,7 @@ local function showhelp(info, inputpos, tab, depth, noHead)
 				if type(desc) == "function" then
 					desc = callfunction(info, v, 'desc')
 				end
-				if v.type == "group" and pickfirstset(v.cmdInline, v.inline, false) then
+				if v.type == "group" and pickfirstset(3, v.cmdInline, v.inline, false) then
 					print("  "..(desc or name)..":")
 					local oldhandler,oldhandler_at = getparam(info, inputpos, v, depth, "handler", handlertypes, handlermsg)
 					showhelp(info, inputpos, v, depth, true)
@@ -395,7 +395,7 @@ local function handle(info, inputpos, tab, depth, retfalse)
 			if not(type(k)=="string" and type(v)=="table" and type(v.type)=="string") then err(info,inputpos, "options table child '"..tostring(k).."' is malformed") end
 
 			-- is this child an inline group? if so, traverse into it
-			if v.type=="group" and pickfirstset(v.cmdInline, v.inline, false) then
+			if v.type=="group" and pickfirstset(3, v.cmdInline, v.inline, false) then
 				tinsert(info,k)
 				if handle(info, inputpos, v, depth+1, true)==false then
 					tremove(info)

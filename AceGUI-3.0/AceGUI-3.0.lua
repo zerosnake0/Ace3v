@@ -31,6 +31,7 @@ local AceGUI, oldminor = LibStub:NewLibrary(ACEGUI_MAJOR, ACEGUI_MINOR)
 if not AceGUI then return end -- No upgrade needed
 
 local AceCore = LibStub("AceCore-3.0")
+local hooksecurefunc = AceCore.hooksecurefunc
 
 -- Lua APIs
 local tconcat, tremove, tinsert, tgetn = table.concat, table.remove, table.insert, table.getn
@@ -54,11 +55,13 @@ AceGUI.LayoutRegistry = AceGUI.LayoutRegistry or {}
 AceGUI.WidgetBase = AceGUI.WidgetBase or {}
 AceGUI.WidgetContainerBase = AceGUI.WidgetContainerBase or {}
 AceGUI.WidgetVersions = AceGUI.WidgetVersions or {}
- 
+AceGUI.HookedFunctions = AceGUI.HookedFunctions or {}
+
 -- local upvalues
 local WidgetRegistry = AceGUI.WidgetRegistry
 local LayoutRegistry = AceGUI.LayoutRegistry
 local WidgetVersions = AceGUI.WidgetVersions
+local HookedFunctions = AceGUI.HookedFunctions
 
 --[[
 	 xpcall safecall implementation
@@ -68,21 +71,6 @@ local safecall = AceCore.safecall
 -- Recycling functions
 local newWidget, delWidget
 do
-	-- Version Upgrade in Minor 29
-	-- Internal Storage of the objects changed, from an array table
-	-- to a hash table, and additionally we introduced versioning on
-	-- the widgets which would discard all widgets from a pre-29 version
-	-- anyway, so we just clear the storage now, and don't try to 
-	-- convert the storage tables to the new format.
-	-- This should generally not cause *many* widgets to end up in trash,
-	-- since once dialogs are opened, all addons should be loaded already
-	-- and AceGUI should be on the latest version available on the users
-	-- setup.
-	-- -- nevcairiel - Nov 2nd, 2009
-	if oldminor and oldminor < 29 and AceGUI.objPools then
-		AceGUI.objPools = nil
-	end
-	
 	AceGUI.objPools = AceGUI.objPools or {}
 	local objPools = AceGUI.objPools
 	--Returns a new instance, if none are available either returns a new table or calls the given contructor
@@ -90,11 +78,11 @@ do
 		if not WidgetRegistry[type] then
 			error("Attempt to instantiate unknown widget type", 2)
 		end
-		
+
 		if not objPools[type] then
 			objPools[type] = {}
 		end
-		
+
 		local newObj = next(objPools[type])
 		if not newObj then
 			newObj = WidgetRegistry[type]()
@@ -137,27 +125,14 @@ function AceGUI:Create(type)
 	if WidgetRegistry[type] then
 		local widget = newWidget(type)
 
-		if rawget(widget, "Acquire") then
-			widget.OnAcquire = widget.Acquire
-			widget.Acquire = nil
-		elseif rawget(widget, "Aquire") then
-			widget.OnAcquire = widget.Aquire
-			widget.Aquire = nil
-		end
-		
-		if rawget(widget, "Release") then
-			widget.OnRelease = rawget(widget, "Release") 
-			widget.Release = nil
-		end
-		
 		if widget.OnAcquire then
 			widget:OnAcquire()
 		else
 			error(("Widget type %s doesn't supply an OnAcquire Function"):format(type))
 		end
 		-- Set the default Layout ("List")
-		safecall(widget.SetLayout, widget, "List")
-		safecall(widget.ResumeLayout, widget)
+		safecall(widget.SetLayout, 2, widget, "List")
+		safecall(widget.ResumeLayout, 1, widget)
 		return widget
 	end
 end
@@ -168,9 +143,9 @@ end
 -- If this widget is a Container-Widget, all of its Child-Widgets will be releases as well.
 -- @param widget The widget to release
 function AceGUI:Release(widget)
-	safecall(widget.PauseLayout, widget)
+	safecall(widget.PauseLayout, 1, widget)
 	widget:Fire("OnRelease")
-	safecall(widget.ReleaseChildren, widget)
+	safecall(widget.ReleaseChildren, 1, widget)
 
 	if widget.OnRelease then
 		widget:OnRelease()
@@ -210,7 +185,7 @@ end
 -- @param widget The widget that should be focused
 function AceGUI:SetFocus(widget)
 	if self.FocusedWidget and self.FocusedWidget ~= widget then
-		safecall(self.FocusedWidget.ClearFocus, self.FocusedWidget)
+		safecall(self.FocusedWidget.ClearFocus, 1, self.FocusedWidget)
 	end
 	self.FocusedWidget = widget
 end
@@ -220,7 +195,7 @@ end
 -- e.g. titlebar of a frame being clicked
 function AceGUI:ClearFocus()
 	if self.FocusedWidget then
-		safecall(self.FocusedWidget.ClearFocus, self.FocusedWidget)
+		safecall(self.FocusedWidget.ClearFocus, 1, self.FocusedWidget)
 		self.FocusedWidget = nil
 	end
 end
@@ -273,9 +248,10 @@ do
 		end
 	end
 	
-	WidgetBase.Fire = function(self, name, ...)
+	WidgetBase.Fire = function(self,name,argc,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+		argc = argc or 0
 		if self.events[name] then
-			local success, ret = safecall(self.events[name], self, name, unpack(arg))
+			local success, ret = safecall(self.events[name],argc+2,self,name,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 			if success then
 				return ret
 			end
@@ -397,7 +373,7 @@ do
 		if self.LayoutPaused then
 			return
 		end
-		safecall(self.LayoutFunc, self.content, self.children)
+		safecall(self.LayoutFunc, 2, self.content, self.children)
 	end
 	
 	--call this function to layout, makes sure layed out objects get a frame to get sizes etc
@@ -469,7 +445,7 @@ do
 		end
 	end
 
-	local function FrameResize(this)
+	local function FrameResize()
 		local self = this.obj
 		if this:GetWidth() and this:GetHeight() then
 			if self.OnWidthSet then
@@ -481,7 +457,7 @@ do
 		end
 	end
 	
-	local function ContentResize(this)
+	local function ContentResize()
 		if this:GetWidth() and this:GetHeight() then
 			this.width = this:GetWidth()
 			this.height = this:GetHeight()
@@ -635,7 +611,7 @@ AceGUI:RegisterLayout("List",
 			
 			height = height + (frame.height or frame:GetHeight() or 0)
 		end
-		safecall(content.obj.LayoutFinished, content.obj, nil, height)
+		safecall(content.obj.LayoutFinished, 3, content.obj, nil, height)
 	end)
 
 -- A single control fills the whole content area
@@ -646,7 +622,7 @@ AceGUI:RegisterLayout("Fill",
 			children[1]:SetHeight(content:GetHeight() or 0)
 			children[1].frame:SetAllPoints(content)
 			children[1].frame:Show()
-			safecall(content.obj.LayoutFinished, content.obj, nil, children[1].frame:GetHeight())
+			safecall(content.obj.LayoutFinished, 3, content.obj, nil, children[1].frame:GetHeight())
 		end
 	end)
 
@@ -786,5 +762,5 @@ AceGUI:RegisterLayout("Flow",
 		end
 		
 		height = height + rowheight + 3
-		safecall(content.obj.LayoutFinished, content.obj, nil, height)
+		safecall(content.obj.LayoutFinished, 3, content.obj, nil, height)
 	end)

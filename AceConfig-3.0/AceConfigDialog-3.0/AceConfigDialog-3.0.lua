@@ -863,7 +863,7 @@ end
 
 local function CheckOptionHidden(option, options, path, appName)
 	--check for a specific boolean option
-	local hidden = pickfirstset(option.dialogHidden,option.guiHidden)
+	local hidden = pickfirstset(2,option.dialogHidden,option.guiHidden)
 	if hidden ~= nil then
 		return hidden
 	end
@@ -873,7 +873,7 @@ end
 
 local function CheckOptionDisabled(option, options, path, appName)
 	--check for a specific boolean option
-	local disabled = pickfirstset(option.dialogDisabled,option.guiDisabled)
+	local disabled = pickfirstset(2,option.dialogDisabled,option.guiDisabled)
 	if disabled ~= nil then
 		return disabled
 	end
@@ -894,7 +894,7 @@ local function BuildTabs(group, options, path, appName)
 		local v = opts[k]
 		if v.type == "group" then
 			path[#path+1] = k
-			local inline = pickfirstset(v.dialogInline,v.guiInline,v.inline, false)
+			local inline = pickfirstset(4,v.dialogInline,v.guiInline,v.inline, false)
 			local hidden = CheckOptionHidden(v, options, path, appName)
 			if not inline and not hidden then
 				tinsert(tabs, k)
@@ -923,7 +923,7 @@ local function BuildSelect(group, options, path, appName)
 		local v = opts[k]
 		if v.type == "group" then
 			tinsert(path,k)
-			local inline = pickfirstset(v.dialogInline,v.guiInline,v.inline, false)
+			local inline = pickfirstset(4,v.dialogInline,v.guiInline,v.inline, false)
 			local hidden = CheckOptionHidden(v, options, path, appName)
 			if not inline and not hidden then
 				groups[k] = GetOptionsMemberValue("name", v, options, path, appName)
@@ -950,7 +950,7 @@ local function BuildSubGroups(group, tree, options, path, appName)
 		local v = opts[k]
 		if v.type == "group" then
 			tinsert(path,k)
-			local inline = pickfirstset(v.dialogInline,v.guiInline,v.inline, false)
+			local inline = pickfirstset(4,v.dialogInline,v.guiInline,v.inline, false)
 			local hidden = CheckOptionHidden(v, options, path, appName)
 			if not inline and not hidden then
 				local entry = new()
@@ -985,7 +985,7 @@ local function BuildGroups(group, options, path, appName, recurse)
 		local v = opts[k]
 		if v.type == "group" then
 			tinsert(path,k)
-			local inline = pickfirstset(v.dialogInline,v.guiInline,v.inline, false)
+			local inline = pickfirstset(4,v.dialogInline,v.guiInline,v.inline, false)
 			local hidden = CheckOptionHidden(v, options, path, appName)
 			if not inline and not hidden then
 				local entry = new()
@@ -1043,7 +1043,7 @@ local function FeedOptions(appName, options,container,rootframe,path,group,inlin
 		local name = GetOptionsMemberValue("name", v, options, path, appName)
 		if not hidden then
 			if v.type == "group" then
-				if inline or pickfirstset(v.dialogInline,v.guiInline,v.inline, false) then
+				if inline or pickfirstset(4, v.dialogInline,v.guiInline,v.inline, false) then
 					--Inline group
 					local GroupContainer
 					if name and name ~= "" then
@@ -1521,7 +1521,7 @@ function AceConfigDialog:FeedGroup(appName,options,container,rootframe,path, isR
 	for i = 1, tgetn(path) do
 		local v = path[i]
 		group = GetSubOption(group, v)
-		inline = inline or pickfirstset(v.dialogInline,v.guiInline,v.inline, false)
+		inline = inline or pickfirstset(4,v.dialogInline,v.guiInline,v.inline, false)
 		parenttype = grouptype
 		grouptype = group.childGroups
 	end
@@ -1533,14 +1533,14 @@ function AceConfigDialog:FeedGroup(appName,options,container,rootframe,path, isR
 	--check if the group has child groups
 	local hasChildGroups
 	for k, v in pairs(group.args) do
-		if v.type == "group" and not pickfirstset(v.dialogInline,v.guiInline,v.inline, false) and not CheckOptionHidden(v, options, path, appName) then
+		if v.type == "group" and not pickfirstset(4,v.dialogInline,v.guiInline,v.inline, false) and not CheckOptionHidden(v, options, path, appName) then
 			hasChildGroups = true
 		end
 	end
 	if group.plugins then
 		for plugin, t in pairs(group.plugins) do
 			for k, v in pairs(t) do
-				if v.type == "group" and not pickfirstset(v.dialogInline,v.guiInline,v.inline, false) and not CheckOptionHidden(v, options, path, appName) then
+				if v.type == "group" and not pickfirstset(4,v.dialogInline,v.guiInline,v.inline, false) and not CheckOptionHidden(v, options, path, appName) then
 					hasChildGroups = true
 				end
 			end

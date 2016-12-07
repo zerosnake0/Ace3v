@@ -21,20 +21,20 @@ local _G = AceCore._G
 Support functions
 -------------------------------------------------------------------------------]]
 
-if not AceGUIMultiLineEditBoxInsertLink then
-	-- upgradeable hook
-	hooksecurefunc("ChatEdit_InsertLink", function(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10) return _G.AceGUIMultiLineEditBoxInsertLink(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10) end)
-end
-
-function _G.AceGUIMultiLineEditBoxInsertLink(text)
-	for i = 1, AceGUI:GetWidgetCount(Type) do
-		local editbox = _G[("MultiLineEditBox%uEdit"):format(i)]
-		if editbox and editbox:IsVisible() and editbox:HasFocus() then
-			editbox:Insert(text)
-			return true
-		end
-	end
-end
+--if not AceGUIMultiLineEditBoxInsertLink then
+--	-- upgradeable hook
+--	hooksecurefunc("ChatEdit_InsertLink", function(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10) return _G.AceGUIMultiLineEditBoxInsertLink(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10) end)
+--end
+--
+--function _G.AceGUIMultiLineEditBoxInsertLink(text)
+--	for i = 1, AceGUI:GetWidgetCount(Type) do
+--		local editbox = _G[("MultiLineEditBox%uEdit"):format(i)]
+--		if editbox and editbox:IsVisible() and editbox:HasFocus() then
+--			editbox:Insert(text)
+--			return true
+--		end
+--	end
+--end
 
 
 local function Layout(self)

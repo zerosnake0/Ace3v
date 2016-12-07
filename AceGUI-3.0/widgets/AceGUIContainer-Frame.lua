@@ -22,26 +22,26 @@ local CreateFrame, UIParent = CreateFrame, UIParent
 --[[-----------------------------------------------------------------------------
 Scripts
 -------------------------------------------------------------------------------]]
-local function Button_OnClick(frame)
+local function Button_OnClick()
 	PlaySound("gsTitleOptionExit")
-	frame.obj:Hide()
+	this.obj:Hide()
 end
 
-local function Frame_OnClose(frame)
-	frame.obj:Fire("OnClose")
+local function Frame_OnClose()
+	this.obj:Fire("OnClose")
 end
 
-local function Frame_OnMouseDown(frame)
+local function Frame_OnMouseDown()
 	AceGUI:ClearFocus()
 end
 
-local function Title_OnMouseDown(frame)
-	frame:GetParent():StartMoving()
+local function Title_OnMouseDown()
+	this:GetParent():StartMoving()
 	AceGUI:ClearFocus()
 end
 
-local function MoverSizer_OnMouseUp(mover)
-	local frame = mover:GetParent()
+local function MoverSizer_OnMouseUp()
+	local frame = this:GetParent()
 	frame:StopMovingOrSizing()
 	local self = frame.obj
 	local status = self.status or self.localstatus
@@ -51,27 +51,27 @@ local function MoverSizer_OnMouseUp(mover)
 	status.left = frame:GetLeft()
 end
 
-local function SizerSE_OnMouseDown(frame)
-	frame:GetParent():StartSizing("BOTTOMRIGHT")
+local function SizerSE_OnMouseDown()
+	this:GetParent():StartSizing("BOTTOMRIGHT")
 	AceGUI:ClearFocus()
 end
 
-local function SizerS_OnMouseDown(frame)
-	frame:GetParent():StartSizing("BOTTOM")
+local function SizerS_OnMouseDown()
+	this:GetParent():StartSizing("BOTTOM")
 	AceGUI:ClearFocus()
 end
 
-local function SizerE_OnMouseDown(frame)
-	frame:GetParent():StartSizing("RIGHT")
+local function SizerE_OnMouseDown()
+	this:GetParent():StartSizing("RIGHT")
 	AceGUI:ClearFocus()
 end
 
-local function StatusBar_OnEnter(frame)
-	frame.obj:Fire("OnEnterStatusBar")
+local function StatusBar_OnEnter()
+	this.obj:Fire("OnEnterStatusBar")
 end
 
-local function StatusBar_OnLeave(frame)
-	frame.obj:Fire("OnLeaveStatusBar")
+local function StatusBar_OnLeave()
+	this.obj:Fire("OnLeaveStatusBar")
 end
 
 --[[-----------------------------------------------------------------------------
@@ -154,7 +154,7 @@ local methods = {
 			frame:SetPoint("TOP", UIParent, "BOTTOM", 0, status.top)
 			frame:SetPoint("LEFT", UIParent, "LEFT", status.left, 0)
 		else
-			frame:SetPoint("CENTER")
+			frame:SetPoint("CENTER", UIParent)
 		end
 	end
 }
@@ -245,8 +245,9 @@ local function Constructor()
 	titlebg_r:SetWidth(30)
 	titlebg_r:SetHeight(40)
 
+	-- bottom right sizer
 	local sizer_se = CreateFrame("Frame", nil, frame)
-	sizer_se:SetPoint("BOTTOMRIGHT")
+	sizer_se:SetPoint("BOTTOMRIGHT", 0, 0)
 	sizer_se:SetWidth(25)
 	sizer_se:SetHeight(25)
 	sizer_se:EnableMouse()
@@ -254,24 +255,13 @@ local function Constructor()
 	sizer_se:SetScript("OnMouseUp", MoverSizer_OnMouseUp)
 
 	local line1 = sizer_se:CreateTexture(nil, "BACKGROUND")
-	line1:SetWidth(14)
-	line1:SetHeight(14)
-	line1:SetPoint("BOTTOMRIGHT", -8, 8)
-	line1:SetTexture("Interface\\Tooltips\\UI-Tooltip-Border")
-	local x = 0.1 * 14/17
-	line1:SetTexCoord(0.05 - x, 0.5, 0.05, 0.5 + x, 0.05, 0.5 - x, 0.5 + x, 0.5)
-
-	local line2 = sizer_se:CreateTexture(nil, "BACKGROUND")
-	line2:SetWidth(8)
-	line2:SetHeight(8)
-	line2:SetPoint("BOTTOMRIGHT", -8, 8)
-	line2:SetTexture("Interface\\Tooltips\\UI-Tooltip-Border")
-	local x = 0.1 * 8/17
-	line2:SetTexCoord(0.05 - x, 0.5, 0.05, 0.5 + x, 0.05, 0.5 - x, 0.5 + x, 0.5)
+	line1:SetPoint("BOTTOMRIGHT", -10, 10)
+	line1:SetTexture("Interface\\Cursor\\Item")
+	line1:SetTexCoord(1, 0, 1, 0)
 
 	local sizer_s = CreateFrame("Frame", nil, frame)
 	sizer_s:SetPoint("BOTTOMRIGHT", -25, 0)
-	sizer_s:SetPoint("BOTTOMLEFT")
+	sizer_s:SetPoint("BOTTOMLEFT", 0, 0)
 	sizer_s:SetHeight(25)
 	sizer_s:EnableMouse(true)
 	sizer_s:SetScript("OnMouseDown", SizerS_OnMouseDown)
@@ -279,7 +269,7 @@ local function Constructor()
 
 	local sizer_e = CreateFrame("Frame", nil, frame)
 	sizer_e:SetPoint("BOTTOMRIGHT", 0, 25)
-	sizer_e:SetPoint("TOPRIGHT")
+	sizer_e:SetPoint("TOPRIGHT", 0, 0)
 	sizer_e:SetWidth(25)
 	sizer_e:EnableMouse(true)
 	sizer_e:SetScript("OnMouseDown", SizerE_OnMouseDown)
