@@ -85,7 +85,7 @@ local methods = {
 		self:SetStatusText()
 		self:ApplyStatus()
 		self:Show()
-        self:EnableResize(true)
+		self:EnableResize(true)
 	end,
 
 	["OnRelease"] = function(self)

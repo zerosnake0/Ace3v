@@ -53,7 +53,7 @@ local function UpdateImageAnchor(self)
 		end
 	else
 		-- no image shown
-		label:SetPoint("TOPLEFT")
+		label:SetPoint("TOPLEFT",0,0)
 		label:SetWidth(width)
 		height = label:GetHeight()
 	end

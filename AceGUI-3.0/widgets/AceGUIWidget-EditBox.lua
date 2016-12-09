@@ -169,36 +169,6 @@ local function EditBox_OnEnterPressed()
 	end
 end
 
-local function EditBox_OnReceiveDrag()
-	local self = this.obj
-	local type, id, info = GetCursorInfo()
-	if type == "item" then
-		self:SetText(info)
-		self:Fire("OnEnterPressed", info)
-		ClearCursor()
-	elseif type == "spell" then
-		local name
-		local spellName, subSpellName = GetSpellName(id, SpellBookFrame.bookType)
-		if spellName and not IsSpellPassive(id, SpellBookFrame.bookType) then
-			if subSpellName and (strlen(subSpellName) > 0) then
-				name = spellName.."("..subSpellName..")"
-			else
-				name = spellName
-			end
-		end
-		self:SetText(name)
-		self:Fire("OnEnterPressed", name)
-		ClearCursor()
-	elseif type == "macro" then
-		local name = GetMacroInfo(id)
-		self:SetText(name)
-		self:Fire("OnEnterPressed", name)
-		ClearCursor()
-	end
-	HideButton(self)
-	AceGUI:ClearFocus()
-end
-
 local function EditBox_OnTextChanged()
 	local self = this.obj
 	local value = this:GetText()
@@ -221,7 +191,8 @@ end
 local function Button_OnClick()
 	local editbox = this.obj.editbox
 	editbox:ClearFocus()
-	EditBox_OnEnterPressed(editbox)
+	this = editbox	-- Ace3v: this is kinda hack here
+	EditBox_OnEnterPressed()
 end
 
 --[[-----------------------------------------------------------------------------
@@ -236,6 +207,12 @@ local methods = {
 		self:SetText()
 		self:DisableButton(false)
 		self:SetMaxLetters(0)
+	end,
+
+	["OnSetParent"] = function(self, parent)
+		local lv = self.frame:GetFrameLevel()
+		self.editbox:SetFrameLevel(lv+1)
+		self.button:SetFrameLevel(lv+2)
 	end,
 
 	["OnRelease"] = function(self)
@@ -328,8 +305,6 @@ local function Constructor()
 	editbox:SetScript("OnEscapePressed", EditBox_OnEscapePressed)
 	editbox:SetScript("OnEnterPressed", EditBox_OnEnterPressed)
 	editbox:SetScript("OnTextChanged", EditBox_OnTextChanged)
-	editbox:SetScript("OnReceiveDrag", EditBox_OnReceiveDrag)
-	editbox:SetScript("OnMouseDown", EditBox_OnReceiveDrag)
 	editbox:SetScript("OnEditFocusGained", EditBox_OnFocusGained)
 	editbox:SetScript("OnEditFocusLost", EditBox_OnFocusLost)
 	editbox:SetTextInsets(0, 0, 3, 3)

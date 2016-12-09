@@ -14,7 +14,17 @@ function dbg(...)
 	for i=1,tgetn(arg) do
 		arg[i] = tostring(arg[i])
 	end
-	DEFAULT_CHAT_FRAME:AddMessage(table.concat(arg,","))
+	local s = table.concat(arg,",")
+	DEFAULT_CHAT_FRAME:AddMessage(s)
+	if SELECTED_CHAT_FRAME ~= DEFAULT_CHAT_FRAME then
+		SELECTED_CHAT_FRAME:AddMessage(s)
+	end
+end
+
+function dbg1(a1)
+	return function(...)
+		dbg(a1,unpack(arg))
+	end
 end
 
 local new, del
@@ -93,7 +103,7 @@ local Dispatchers = setmetatable({}, {__index=function(self, argCount)
 	return dispatcher
 end})
 
-function AceCore.safecall(func,argc,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+local function safecall(func,argc,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	-- we check to see if the func is passed is actually a function here and don't error when it isn't
 	-- this safecall is used for optional functions like OnInitialize OnEnable etc. When they are not
 	-- present execution should continue without hinderance
@@ -101,6 +111,7 @@ function AceCore.safecall(func,argc,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 		return Dispatchers[argc](func,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	end
 end
+AceCore.safecall = safecall
 
 -- some string functions
 -- vanilla available string operations:
@@ -184,182 +195,4 @@ function AceCore.truncate(t,e)
 		end
 	end
 	tsetn(t,e)
-end
-
--- Some modern wow api
-local cursorType, cursorData, cursorSubType, cursorSubData
-function GetCursorInfo()
-	return cursorType, cursorData, cursorSubType, cursorSubData
-end
-
-local function setcursoritem(link)
-	local _,_,id = strfind(link,"|Hitem:(%d+):")
-	cursorType = "item"
-	cursorData = tonumber(id)
-	cursorSubType = link
-	cursorSubData = nil
-end
-
--- ClearCursor
-if not AceCore_ClearCursor then
-	hooksecurefunc("ClearCursor", function()
-		return _G.AceCore_ClearCursor()
-	end)
-end
-
-function _G.AceCore_ClearCursor()
-	cursorType, cursorData, cursorSubType, cursorSubData = nil,nil,nil,nil
-end
-
--- PickupContainerItem
-if not AceCore_PickupContainerItem then
-	hooksecurefunc("PickupContainerItem",
-		function(container, slot)
-			return _G.AceCore_PickupContainerItem(container, slot)
-		end)
-end
-
-function _G.AceCore_PickupContainerItem(container, slot)
-	if CursorHasItem() then
-		return setcursoritem(GetContainerItemLink(container, slot))
-	end
-end
-
--- PickupBagFromSlot
-if not _G.AceCore_PickupBagFromSlot then
-	hooksecurefunc("PickupBagFromSlot",
-		function(inventoryID)
-			return _G.AceCore_PickupBagFromSlot(inventoryID)
-		end)
-end
-
-function _G.AceCore_PickupBagFromSlot(inventoryID)
-	return setcursoritem(GetInventoryItemLink("player", inventoryID))
-end
-
--- PutItemInBag
-if not _G.AceCore_PutItemInBag then
-	hooksecurefunc("PutItemInBag",
-		function(inventoryID)
-			return _G.AceCore_PutItemInBag(inventoryID)
-		end)
-end
-
-function _G.AceCore_PutItemInBag(inventoryID)
-	cursorType, cursorData, cursorSubType, cursorSubData = nil,nil,nil,nil
-end
-
--- PickupSpell
-if not _G.AceCore_PickupSpell then
-	hooksecurefunc("PickupSpell",
-		function(spellbookID, bookType)
-			return _G.AceCore_PickupSpell(spellbookID, bookType)
-		end)
-end
-
-function _G.AceCore_PickupSpell(spellbookID, bookType)
-	cursorType = "spell"
-	cursorData = spellbookID
-	cursorSubType = bookType
-	cursorSubData = nil	-- Ace3v: how to get spellID?
-end
-
--- PickupMacro
-if not _G.AceCore_PickupMacro then
-	hooksecurefunc("PickupMacro",
-		function(macroID)
-			return _G.AceCore_PickupMacro(macroID)
-		end)
-end
-
-function _G.AceCore_PickupMacro(macroID)
-	dbg("AceCore_PickupMacro")
-	cursorType = "macro"
-	cursorData = macroID
-	cursorSubType = nil
-	cursorSubData = nil
-end
-
--- PickupAction
-if not _G.AceCore_PickupAction then
-	hooksecurefunc("PickupAction",
-		function(slot)
-			return _G.AceCore_PickupAction(slot)
-		end)
-end
-
-function _G.AceCore_PickupAction(slot)
-	dbg("AceCore_PickupAction")
-	cursorType = nil
-	cursorData = nil
-	cursorSubType = nil
-	cursorSubData = nil
-end
-
--- PlaceAction
-if not _G.AceCore_PlaceAction then
-	hooksecurefunc("PlaceAction",
-		function(slot)
-			return _G.AceCore_PlaceAction(slot)
-		end)
-end
-
-function _G.AceCore_PlaceAction(slot)
-	cursorType, cursorData, cursorSubType, cursorSubData = nil,nil,nil,nil
-end
-
-local function ActionButton_OnClick()
-	dbg("ActionButton_OnClick")
-	if ( IsShiftKeyDown() ) then
-		PickupAction(ActionButton_GetPagedID(this));
-	else
-		if ( MacroFrame_SaveMacro ) then
-			MacroFrame_SaveMacro();
-		end
-		UseAction(ActionButton_GetPagedID(this), 1);
-	end
-	ActionButton_UpdateState();
-end
-
-local function ActionButton_OnDragStart()
-	if ( LOCK_ACTIONBAR ~= "1" ) then
-		PickupAction(ActionButton_GetPagedID(this));
-		ActionButton_UpdateHotkeys(this.buttonType);
-		ActionButton_UpdateState();
-		ActionButton_UpdateFlash();
-	end
-end
-
-local function ActionButton_OnReceiveDrag()
-	dbg("ActionButton_OnReceiveDrag")
-	if ( LOCK_ACTIONBAR ~= "1" ) then
-		PlaceAction(ActionButton_GetPagedID(this));
-		ActionButton_UpdateHotkeys(this.buttonType);
-		ActionButton_UpdateState();
-		ActionButton_UpdateFlash();
-	end
-end
-
-local actionButtons = {
-	"ActionButton",
-	"BonusActionButton",
-	"MultiBarLeftButton",
-	"MultiBarRightButton",
-	"MultiBarBottomLeftButton",
-	"MultiBarBottomRightButton",
-}
-
-for _,btn in actionButtons do
-	for i=1,12 do
-		local frame = _G[btn..i]
-		frame:SetScript("OnDragStart",ActionButton_OnDragStart)
-		frame:SetScript("OnReceiveDrag",ActionButton_OnReceiveDrag)
-		frame:SetScript("OnClick",ActionButton_OnClick)
-	end
-end
-for i=1,10 do
-	local frame = _G["PetActionButton"..i]
-	frame:SetScript("OnDragStart",ActionButton_OnDragStart)
-	frame:SetScript("OnReceiveDrag",ActionButton_OnReceiveDrag)
-	frame:SetScript("OnClick",ActionButton_OnClick)
 end
