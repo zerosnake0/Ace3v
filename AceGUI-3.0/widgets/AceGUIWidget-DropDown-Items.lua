@@ -22,16 +22,16 @@ end
 
 function fixlevels(parent,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	local lv = parent:GetFrameLevel()+1
-	if a1 then _fixlevels(a1,v) else return end
-	if a2 then _fixlevels(a2,v) else return end
-	if a3 then _fixlevels(a3,v) else return end
-	if a4 then _fixlevels(a4,v) else return end
-	if a5 then _fixlevels(a5,v) else return end
-	if a6 then _fixlevels(a6,v) else return end
-	if a7 then _fixlevels(a7,v) else return end
-	if a8 then _fixlevels(a8,v) else return end
-	if a9 then _fixlevels(a9,v) else return end
-	if a10 then _fixlevels(a10,v) else return end
+	if a1 then _fixlevels(a1,lv) else return end
+	if a2 then _fixlevels(a2,lv) else return end
+	if a3 then _fixlevels(a3,lv) else return end
+	if a4 then _fixlevels(a4,lv) else return end
+	if a5 then _fixlevels(a5,lv) else return end
+	if a6 then _fixlevels(a6,lv) else return end
+	if a7 then _fixlevels(a7,lv) else return end
+	if a8 then _fixlevels(a8,lv) else return end
+	if a9 then _fixlevels(a9,lv) else return end
+	if a10 then _fixlevels(a10,lv) else return end
 end
 end -- fixlevels
 
@@ -367,7 +367,7 @@ do
 			PlaySound("igMainMenuOptionCheckBoxOff")
 		end
 		UpdateToggle(self)
-		self:Fire("OnValueChanged", self.value)
+		self:Fire("OnValueChanged", 1, self.value)
 	end
 	
 	-- exported

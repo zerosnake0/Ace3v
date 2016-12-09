@@ -35,14 +35,14 @@ local function UpdateImageAnchor(self)
 		local imagewidth = image:GetWidth()
 		if (width - imagewidth) < 200 or (label:GetText() or "") == "" then
 			-- image goes on top centered when less than 200 width for the text, or if there is no text
-			image:SetPoint("TOP")
+			image:SetPoint("TOP",0,0)
 			label:SetPoint("TOP", image, "BOTTOM")
-			label:SetPoint("LEFT")
+			label:SetPoint("LEFT",0,0)
 			label:SetWidth(width)
 			height = image:GetHeight() + label:GetHeight()
 		else
 			-- image on the left
-			image:SetPoint("TOPLEFT")
+			image:SetPoint("TOPLEFT",0,0)
 			if image:GetHeight() > label:GetHeight() then
 				label:SetPoint("LEFT", image, "RIGHT", 4, 0)
 			else

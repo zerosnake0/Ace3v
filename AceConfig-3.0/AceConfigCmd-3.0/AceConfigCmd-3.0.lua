@@ -21,6 +21,7 @@ local AceConfigCmd = LibStub:NewLibrary(MAJOR, MINOR)
 if not AceConfigCmd then return end
 
 local AceCore = LibStub("AceCore-3.0")
+local Dispatchers = AceCore.Dispatchers
 local strtrim = AceCore.strtrim
 local strsplit = AceCore.strsplit
 local new, del = AceCore.new, AceCore.del
@@ -88,27 +89,7 @@ end
 
 -- callmethod() - call a given named method (e.g. "get", "set") with given arguments
 
-local function CreateDispatcher(argCount)
-	local code = [[
-		return function(func,ARGS)
-			return func(ARGS)
-		end
-	]]
-	local s = "a01,a02,a03,a04,a05,a06,a07,a08,a09,a10"
-	code = strgsub(code, "ARGS", string.sub(s,1,4*argCount-1))
-	return assert(loadstring(code, "call Dispatcher["..tostring(argCount).."]"))()
-end
 
-local Dispatchers = setmetatable({}, {__index=function(self, argCount)
-	local dispatcher
-	if argCount > 0 then
-		dispatcher = CreateDispatcher(argCount)
-	else
-		dispatcher = function(func) return func() end
-	end
-	rawset(self, argCount, dispatcher)
-	return dispatcher
-end})
 
 local function callmethod(info, inputpos, tab, methodtype, argc, a1, a2, a3, a4)
 	local method = info[methodtype]

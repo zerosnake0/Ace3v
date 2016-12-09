@@ -36,11 +36,11 @@ local safecall = AceCore.safecall
 
 -- Lua APIs
 local tconcat, tremove, tinsert, tgetn, tsetn = table.concat, table.remove, table.insert, table.getn, table.setn
-local select, pairs, next, type = select, pairs, next, type
+local pairs, next, type = pairs, next, type
 local error, assert, loadstring = error, assert, loadstring
 local setmetatable, rawget, rawset = setmetatable, rawget, rawset
 local math_max = math.max
-local strupper = string.upper
+local strupper, strfmt = string.upper, string.format
 
 -- WoW APIs
 local UIParent = UIParent
@@ -124,7 +124,7 @@ function AceGUI:Create(type)
 		if widget.OnAcquire then
 			widget:OnAcquire()
 		else
-			error(("Widget type %s doesn't supply an OnAcquire Function"):format(type))
+			error(strfmt("Widget type %s doesn't supply an OnAcquire Function", type))
 		end
 
 		-- Set the default Layout ("List")
@@ -147,7 +147,7 @@ function AceGUI:Release(widget)
 	if widget.OnRelease then
 		widget:OnRelease()
 --	else
---		error(("Widget type %s doesn't supply an OnRelease Function"):format(widget.type))
+--		error(strfmt("Widget type %s doesn't supply an OnRelease Function", widget.type))
 	end
 	for k in pairs(widget.userdata) do
 		widget.userdata[k] = nil
@@ -249,6 +249,7 @@ do
 	end
 
 	WidgetBase.Fire = function(self,name,argc,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+		dbg("fire",self,name,argc,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 		argc = argc or 0
 		if self.events[name] then
 			local success, ret = safecall(self.events[name],argc+2,self,name,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)

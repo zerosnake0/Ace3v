@@ -67,7 +67,7 @@ local function errorhandler(err)
 end
 AceCore.errorhandler = errorhandler
 
-local function CreateDispatcher(argCount)
+local function CreateSafeDispatcher(argCount)
 	local code = [[
 		local errorhandler = LibStub("AceCore-3.0").errorhandler
 		local method, UP_ARGS
@@ -88,14 +88,14 @@ local function CreateDispatcher(argCount)
 	code = strgsub(code, "ARGS", string.sub(s,1,c))
 	s = "nil,nil,nil,nil,nil,nil,nil,nil,nil,nil"
 	code = strgsub(code, "NILS", string.sub(s,1,c))
-	return assert(loadstring(code, "safecall Dispatcher["..tostring(argCount).."]"))()
+	return assert(loadstring(code, "safecall SafeDispatcher["..tostring(argCount).."]"))()
 end
 
-local Dispatchers = setmetatable({}, {__index=function(self, argCount)
+local SafeDispatchers = setmetatable({}, {__index=function(self, argCount)
 	local dispatcher
 	if not tonumber(argCount) then dbg(debugstack()) end
 	if argCount > 0 then
-		dispatcher = CreateDispatcher(argCount)
+		dispatcher = CreateSafeDispatcher(argCount)
 	else
 		dispatcher = function(func) return xpcall(func,errorhandler) end
 	end
@@ -103,15 +103,38 @@ local Dispatchers = setmetatable({}, {__index=function(self, argCount)
 	return dispatcher
 end})
 
-local function safecall(func,argc,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+local function safecall(func,argc,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
 	-- we check to see if the func is passed is actually a function here and don't error when it isn't
 	-- this safecall is used for optional functions like OnInitialize OnEnable etc. When they are not
 	-- present execution should continue without hinderance
 	if type(func) == "function" then
-		return Dispatchers[argc](func,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+		return SafeDispatchers[argc](func,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
 	end
 end
 AceCore.safecall = safecall
+
+local function CreateDispatcher(argCount)
+	local code = [[
+		return function(func,ARGS)
+			return func(ARGS)
+		end
+	]]
+	local s = "a01,a02,a03,a04,a05,a06,a07,a08,a09,a10"
+	code = strgsub(code, "ARGS", string.sub(s,1,4*argCount-1))
+	return assert(loadstring(code, "call Dispatcher["..tostring(argCount).."]"))()
+end
+
+local Dispatchers = setmetatable({}, {__index=function(self, argCount)
+	local dispatcher
+	if argCount > 0 then
+		dispatcher = CreateDispatcher(argCount)
+	else
+		dispatcher = function(func) return func() end
+	end
+	rawset(self, argCount, dispatcher)
+	return dispatcher
+end})
+AceCore.Dispatchers = Dispatchers
 
 -- some string functions
 -- vanilla available string operations:
@@ -171,13 +194,19 @@ AceCore.hooksecurefunc = hooksecurefunc
 
 -- pickfirstset() - picks the first non-nil value and returns it
 local function pickfirstset(argc,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
-	if argc <= 1 or a1 then
+	if (argc <= 1) or (a1 ~= nil) then
 		return a1
 	else
 		return pickfirstset(argc-1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	end
 end
 AceCore.pickfirstset = pickfirstset
+
+local function countargs(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+	if (a1 == nil) then return 0 end
+	return 1 + countargs(a2,a3,a4,a5,a6,a7,a8,a9,a10)
+end
+AceCore.countargs = countargs
 
 -- wipe preserves metatable
 function AceCore.wipe(t)

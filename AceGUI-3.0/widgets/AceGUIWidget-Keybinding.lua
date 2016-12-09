@@ -21,28 +21,28 @@ local CreateFrame, UIParent = CreateFrame, UIParent
 Scripts
 -------------------------------------------------------------------------------]]
 
-local function Control_OnEnter(frame)
-	frame.obj:Fire("OnEnter")
+local function Control_OnEnter()
+	this.obj:Fire("OnEnter")
 end
 
-local function Control_OnLeave(frame)
-	frame.obj:Fire("OnLeave")
+local function Control_OnLeave()
+	this.obj:Fire("OnLeave")
 end
 
-local function Keybinding_OnClick(frame, button)
-	if button == "LeftButton" or button == "RightButton" then
-		local self = frame.obj
+local function Keybinding_OnClick()
+	if arg1 == "LeftButton" or arg1 == "RightButton" then
+		local self = this.obj
 		if self.waitingForKey then
-			frame:EnableKeyboard(false)
-			frame:EnableMouseWheel(false)
+			this:EnableKeyboard(false)
+			this:EnableMouseWheel(false)
 			self.msgframe:Hide()
-			frame:UnlockHighlight()
+			this:UnlockHighlight()
 			self.waitingForKey = nil
 		else
-			frame:EnableKeyboard(true)
-			frame:EnableMouseWheel(true)
+			this:EnableKeyboard(true)
+			this:EnableMouseWheel(true)
 			self.msgframe:Show()
-			frame:LockHighlight()
+			this:LockHighlight()
 			self.waitingForKey = true
 		end
 	end
@@ -55,10 +55,10 @@ local ignoreKeys = {
 	["LSHIFT"] = true, ["LCTRL"] = true, ["LALT"] = true,
 	["RSHIFT"] = true, ["RCTRL"] = true, ["RALT"] = true,
 }
-local function Keybinding_OnKeyDown(frame, key)
-	local self = frame.obj
+local function Keybinding_OnKeyDown()
+	local self = this.obj
 	if self.waitingForKey then
-		local keyPressed = key
+		local keyPressed = arg1
 		if keyPressed == "ESCAPE" then
 			keyPressed = ""
 		else
@@ -74,40 +74,39 @@ local function Keybinding_OnKeyDown(frame, key)
 			end
 		end
 
-		frame:EnableKeyboard(false)
-		frame:EnableMouseWheel(false)
+		this:EnableKeyboard(false)
+		this:EnableMouseWheel(false)
 		self.msgframe:Hide()
-		frame:UnlockHighlight()
+		this:UnlockHighlight()
 		self.waitingForKey = nil
 
 		if not self.disabled then
 			self:SetKey(keyPressed)
-			self:Fire("OnKeyChanged", keyPressed)
+			self:Fire("OnKeyChanged", 1, keyPressed)
 		end
 	end
 end
 
-local function Keybinding_OnMouseDown(frame, button)
-	if button == "LeftButton" or button == "RightButton" then
+local function Keybinding_OnMouseDown(frame, arg1)
+	if arg1 == "LeftButton" or arg1 == "RightButton" then
 		return
-	elseif button == "MiddleButton" then
-		button = "BUTTON3"
-	elseif button == "Button4" then
-		button = "BUTTON4"
-	elseif button == "Button5" then
-		button = "BUTTON5"
+	elseif arg1 == "MiddleButton" then
+		arg1 = "BUTTON3"
+	elseif arg1 == "Button4" then
+		arg1 = "BUTTON4"
+	elseif arg1 == "Button5" then
+		arg1 = "BUTTON5"
 	end
-	Keybinding_OnKeyDown(frame, button)
+	Keybinding_OnKeyDown()
 end
 
-local function Keybinding_OnMouseWheel(frame, direction)
-	local button
-	if direction >= 0 then
-		button = "MOUSEWHEELUP"
+local function Keybinding_OnMouseWheel()
+	if arg1 >= 0 then
+		arg1 = "MOUSEWHEELUP"
 	else
-		button = "MOUSEWHEELDOWN"
+		arg1 = "MOUSEWHEELDOWN"
 	end
-	Keybinding_OnKeyDown(frame, button)
+	Keybinding_OnKeyDown()
 end
 
 --[[-----------------------------------------------------------------------------
@@ -141,10 +140,13 @@ local methods = {
 	["SetKey"] = function(self, key)
 		if (key or "") == "" then
 			self.button:SetText(NOT_BOUND)
-			self.button:SetNormalFontObject("GameFontNormal")
+			--dbg("self.button",self.button.GetHighlightFontObject)
+			--self.button:SetNormalFontObject("GameFontNormal")
+			self.button:GetFontString():SetFontObject("GameFontNormal")
 		else
 			self.button:SetText(key)
-			self.button:SetNormalFontObject("GameFontHighlight")
+			--self.button:SetNormalFontObject("GameFontHighlight")
+			self.button:GetFontString():SetFontObject("GameFontHighlight")
 		end
 	end,
 
@@ -199,8 +201,8 @@ local function Constructor()
 	button:SetScript("OnKeyDown", Keybinding_OnKeyDown)
 	button:SetScript("OnMouseDown", Keybinding_OnMouseDown)
 	button:SetScript("OnMouseWheel", Keybinding_OnMouseWheel)
-	button:SetPoint("BOTTOMLEFT")
-	button:SetPoint("BOTTOMRIGHT")
+	button:SetPoint("BOTTOMLEFT",0,0)
+	button:SetPoint("BOTTOMRIGHT",0,0)
 	button:SetHeight(24)
 	button:EnableKeyboard(false)
 
@@ -209,8 +211,8 @@ local function Constructor()
 	text:SetPoint("RIGHT", -7, 0)
 
 	local label = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	label:SetPoint("TOPLEFT")
-	label:SetPoint("TOPRIGHT")
+	label:SetPoint("TOPLEFT",0,0)
+	label:SetPoint("TOPRIGHT",0,0)
 	label:SetJustifyH("CENTER")
 	label:SetHeight(18)
 

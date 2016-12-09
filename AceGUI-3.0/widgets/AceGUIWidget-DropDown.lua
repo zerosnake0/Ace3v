@@ -6,7 +6,7 @@ local AceCore = LibStub("AceCore-3.0")
 -- Lua APIs
 local min, max, floor = math.min, math.max, math.floor
 local pairs, ipairs, type = pairs, ipairs, type
-local tsort, tinsert, tgetn = table.sort, table.insert, table.getn
+local tsort, tinsert, tgetn, tsetn = table.sort, table.insert, table.getn, table.setn
 
 -- WoW APIs
 local PlaySound = PlaySound
@@ -27,16 +27,16 @@ end
 
 function fixlevels(parent,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	local lv = parent:GetFrameLevel()+1
-	if a1 then _fixlevels(a1,v) else return end
-	if a2 then _fixlevels(a2,v) else return end
-	if a3 then _fixlevels(a3,v) else return end
-	if a4 then _fixlevels(a4,v) else return end
-	if a5 then _fixlevels(a5,v) else return end
-	if a6 then _fixlevels(a6,v) else return end
-	if a7 then _fixlevels(a7,v) else return end
-	if a8 then _fixlevels(a8,v) else return end
-	if a9 then _fixlevels(a9,v) else return end
-	if a10 then _fixlevels(a10,v) else return end
+	if a1 then _fixlevels(a1,lv) else return end
+	if a2 then _fixlevels(a2,lv) else return end
+	if a3 then _fixlevels(a3,lv) else return end
+	if a4 then _fixlevels(a4,lv) else return end
+	if a5 then _fixlevels(a5,lv) else return end
+	if a6 then _fixlevels(a6,lv) else return end
+	if a7 then _fixlevels(a7,lv) else return end
+	if a8 then _fixlevels(a8,lv) else return end
+	if a9 then _fixlevels(a9,lv) else return end
+	if a10 then _fixlevels(a10,lv) else return end
 end
 end -- fixlevels
 
@@ -94,15 +94,15 @@ do
 	end
 	
 	-- See the note in Constructor() for each scroll related function
-	local function OnMouseWheel(this, value)
-		this.obj:MoveScroll(value)
+	local function OnMouseWheel()
+		this.obj:MoveScroll(arg1)
 	end
 	
-	local function OnScrollValueChanged(this, value)
-		this.obj:SetScroll(value)
+	local function OnScrollValueChanged()
+		this.obj:SetScroll(arg1)
 	end
 	
-	local function OnSizeChanged(this)
+	local function OnSizeChanged()
 		this.obj:FixScroll()
 	end
 	
@@ -240,6 +240,7 @@ do
 			AceGUI:Release(item)
 			items[i] = nil
 		end
+		tsetn(items,0)
 	end	
 	
 	-- exported
@@ -380,24 +381,24 @@ do
 	
 	--[[ UI event handler ]]--
 	
-	local function Control_OnEnter(this)
+	local function Control_OnEnter()
 		this.obj.button:LockHighlight()
 		this.obj:Fire("OnEnter")
 	end
 	
-	local function Control_OnLeave(this)
+	local function Control_OnLeave()
 		this.obj.button:UnlockHighlight()
 		this.obj:Fire("OnLeave")
 	end
 
-	local function Dropdown_OnHide(this)
+	local function Dropdown_OnHide()
 		local self = this.obj
 		if self.open then
 			self.pullout:Close()
 		end
 	end
 	
-	local function Dropdown_TogglePullout(this)
+	local function Dropdown_TogglePullout()
 		local self = this.obj
 		PlaySound("igMainMenuOptionCheckBoxOn") -- missleading name, but the Blizzard code uses this sound
 		if self.open then
@@ -452,12 +453,12 @@ do
 		local self = this.userdata.obj
 		
 		if self.multiselect then
-			self:Fire("OnValueChanged", this.userdata.value, checked)
+			self:Fire("OnValueChanged", 2, this.userdata.value, checked)
 			ShowMultiText(self)
 		else
 			if checked then
 				self:SetValue(this.userdata.value)
-				self:Fire("OnValueChanged", this.userdata.value)
+				self:Fire("OnValueChanged", 1, this.userdata.value)
 			else
 				this:SetValue(true)
 			end
@@ -619,13 +620,20 @@ do
 		if type(order) ~= "table" then
 			for v in pairs(list) do
 				tinsert(sortlist, v)
+				dbg('insert',v)
 			end
+			dbg('...**',tgetn(sortlist))
+			for a,b in sortlist do
+				dbg(a,b)
+			end
+			dbg('...**')
 			tsort(sortlist)
 			
 			for i, key in ipairs(sortlist) do
 				AddListItem(self, key, list[key], itemType)
 				sortlist[i] = nil
 			end
+			tsetn(sortlist,0)
 		else
 			for i, key in ipairs(order) do
 				AddListItem(self, key, list[key], itemType)

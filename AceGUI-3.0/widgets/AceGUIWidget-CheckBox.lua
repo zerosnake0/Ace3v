@@ -24,26 +24,26 @@ local function AlignImage(self)
 	self.text:ClearAllPoints()
 	if not img then
 		self.text:SetPoint("LEFT", self.checkbg, "RIGHT")
-		self.text:SetPoint("RIGHT")
+		self.text:SetPoint("RIGHT",0,0)
 	else
 		self.text:SetPoint("LEFT", self.image,"RIGHT", 1, 0)
-		self.text:SetPoint("RIGHT")
+		self.text:SetPoint("RIGHT",0,0)
 	end
 end
 
 --[[-----------------------------------------------------------------------------
 Scripts
 -------------------------------------------------------------------------------]]
-local function Control_OnEnter(frame)
-	frame.obj:Fire("OnEnter")
+local function Control_OnEnter()
+	this.obj:Fire("OnEnter")
 end
 
-local function Control_OnLeave(frame)
-	frame.obj:Fire("OnLeave")
+local function Control_OnLeave()
+	this.obj:Fire("OnLeave")
 end
 
-local function CheckBox_OnMouseDown(frame)
-	local self = frame.obj
+local function CheckBox_OnMouseDown()
+	local self = this.obj
 	if not self.disabled then
 		if self.image:GetTexture() then
 			self.text:SetPoint("LEFT", self.image,"RIGHT", 2, -1)
@@ -54,8 +54,8 @@ local function CheckBox_OnMouseDown(frame)
 	AceGUI:ClearFocus()
 end
 
-local function CheckBox_OnMouseUp(frame)
-	local self = frame.obj
+local function CheckBox_OnMouseUp()
+	local self = this.obj
 	if not self.disabled then
 		self:ToggleChecked()
 
@@ -65,7 +65,7 @@ local function CheckBox_OnMouseUp(frame)
 			PlaySound("igMainMenuOptionCheckBoxOff")
 		end
 
-		self:Fire("OnValueChanged", self.checked)
+		self:Fire("OnValueChanged", 1, self.checked)
 		AlignImage(self)
 	end
 end
@@ -252,7 +252,7 @@ local function Constructor()
 	local checkbg = frame:CreateTexture(nil, "ARTWORK")
 	checkbg:SetWidth(24)
 	checkbg:SetHeight(24)
-	checkbg:SetPoint("TOPLEFT")
+	checkbg:SetPoint("TOPLEFT",0,0)
 	checkbg:SetTexture("Interface\\Buttons\\UI-CheckBox-Up")
 
 	local check = frame:CreateTexture(nil, "OVERLAY")
@@ -263,7 +263,7 @@ local function Constructor()
 	text:SetJustifyH("LEFT")
 	text:SetHeight(18)
 	text:SetPoint("LEFT", checkbg, "RIGHT")
-	text:SetPoint("RIGHT")
+	text:SetPoint("RIGHT",0,0)
 
 	local highlight = frame:CreateTexture(nil, "HIGHLIGHT")
 	highlight:SetTexture("Interface\\Buttons\\UI-CheckBox-Highlight")

@@ -19,7 +19,7 @@ local function SelectedGroup(self, event, value)
 	local group = self.parentgroup
 	local status = group.status or group.localstatus
 	status.selected = value
-	self.parentgroup:Fire("OnGroupSelected", value)
+	self.parentgroup:Fire("OnGroupSelected", 1, value)
 end
 
 --[[-----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ local methods = {
 		self.dropdown:SetValue(group)
 		local status = self.status or self.localstatus
 		status.selected = group
-		self:Fire("OnGroupSelected", group)
+		self:Fire("OnGroupSelected", 1, group)
 	end,
 
 	["OnWidthSet"] = function(self, width)

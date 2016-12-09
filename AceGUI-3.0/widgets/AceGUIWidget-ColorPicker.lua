@@ -27,12 +27,12 @@ local function ColorCallback(self, r, g, b, a, isAlpha)
 	self:SetColor(r, g, b, a)
 	if ColorPickerFrame:IsVisible() then
 		--colorpicker is still open
-		self:Fire("OnValueChanged", r, g, b, a)
+		self:Fire("OnValueChanged", 4, r, g, b, a)
 	else
 		--colorpicker is closed, color callback is first, ignore it,
 		--alpha callback is the final call after it closes so confirm now
 		if isAlpha then
-			self:Fire("OnValueConfirmed", r, g, b, a)
+			self:Fire("OnValueConfirmed", 4, r, g, b, a)
 		end
 	end
 end
@@ -40,20 +40,20 @@ end
 --[[-----------------------------------------------------------------------------
 Scripts
 -------------------------------------------------------------------------------]]
-local function Control_OnEnter(frame)
-	frame.obj:Fire("OnEnter")
+local function Control_OnEnter()
+	this.obj:Fire("OnEnter")
 end
 
-local function Control_OnLeave(frame)
-	frame.obj:Fire("OnLeave")
+local function Control_OnLeave()
+	this.obj:Fire("OnLeave")
 end
 
-local function ColorSwatch_OnClick(frame)
+local function ColorSwatch_OnClick()
 	HideUIPanel(ColorPickerFrame)
-	local self = frame.obj
+	local self = this.obj
 	if not self.disabled then
 		ColorPickerFrame:SetFrameStrata("FULLSCREEN_DIALOG")
-		ColorPickerFrame:SetFrameLevel(frame:GetFrameLevel() + 10)
+		ColorPickerFrame:SetFrameLevel(this:GetFrameLevel() + 10)
 		ColorPickerFrame:SetClampedToScreen(true)
 
 		ColorPickerFrame.func = function()
@@ -143,7 +143,7 @@ local function Constructor()
 	colorSwatch:SetWidth(19)
 	colorSwatch:SetHeight(19)
 	colorSwatch:SetTexture("Interface\\ChatFrame\\ChatFrameColorSwatch")
-	colorSwatch:SetPoint("LEFT")
+	colorSwatch:SetPoint("LEFT",0,0)
 
 	local texture = frame:CreateTexture(nil, "BACKGROUND")
 	texture:SetWidth(16)
@@ -171,7 +171,7 @@ local function Constructor()
 	text:SetJustifyH("LEFT")
 	text:SetTextColor(1, 1, 1)
 	text:SetPoint("LEFT", colorSwatch, "RIGHT", 2, 0)
-	text:SetPoint("RIGHT")
+	text:SetPoint("RIGHT",0,0)
 
 	--local highlight = frame:CreateTexture(nil, "HIGHLIGHT")
 	--highlight:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
