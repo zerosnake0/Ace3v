@@ -82,11 +82,11 @@ local function CreateSafeDispatcher(argCount)
 		end
 	]]
 	local c = 4*argCount-1
-	local s = "b01,b02,b03,b04,b05,b06,b07,b08,b09,b10"
+	local s = "b01,b02,b03,b04,b05,b06,b07,b08,b09,b10,b11,b12,b13,b14,b15,b16,b17,b18,b19,b20"
 	code = strgsub(code, "UP_ARGS", string.sub(s,1,c))
-	s = "a01,a02,a03,a04,a05,a06,a07,a08,a09,a10"
+	s = "a01,a02,a03,a04,a05,a06,a07,a08,a09,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20"
 	code = strgsub(code, "ARGS", string.sub(s,1,c))
-	s = "nil,nil,nil,nil,nil,nil,nil,nil,nil,nil"
+	s = "nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil"
 	code = strgsub(code, "NILS", string.sub(s,1,c))
 	return assert(loadstring(code, "safecall SafeDispatcher["..tostring(argCount).."]"))()
 end
@@ -119,12 +119,12 @@ local function CreateDispatcher(argCount)
 			return func(ARGS)
 		end
 	]]
-	local s = "a01,a02,a03,a04,a05,a06,a07,a08,a09,a10"
+	local s = "a01,a02,a03,a04,a05,a06,a07,a08,a09,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20"
 	code = strgsub(code, "ARGS", string.sub(s,1,4*argCount-1))
 	return assert(loadstring(code, "call Dispatcher["..tostring(argCount).."]"))()
 end
 
-local Dispatchers = setmetatable({}, {__index=function(self, argCount)
+AceCore.Dispatchers = setmetatable({}, {__index=function(self, argCount)
 	local dispatcher
 	if argCount > 0 then
 		dispatcher = CreateDispatcher(argCount)
@@ -134,7 +134,6 @@ local Dispatchers = setmetatable({}, {__index=function(self, argCount)
 	rawset(self, argCount, dispatcher)
 	return dispatcher
 end})
-AceCore.Dispatchers = Dispatchers
 
 -- some string functions
 -- vanilla available string operations:

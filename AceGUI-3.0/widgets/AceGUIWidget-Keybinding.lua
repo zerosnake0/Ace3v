@@ -29,31 +29,19 @@ local function Control_OnLeave()
 	this.obj:Fire("OnLeave")
 end
 
-local function Keybinding_OnClick()
-	if arg1 == "LeftButton" or arg1 == "RightButton" then
-		local self = this.obj
-		if self.waitingForKey then
-			this:EnableKeyboard(false)
-			this:EnableMouseWheel(false)
-			self.msgframe:Hide()
-			this:UnlockHighlight()
-			self.waitingForKey = nil
-		else
-			this:EnableKeyboard(true)
-			this:EnableMouseWheel(true)
-			self.msgframe:Show()
-			this:LockHighlight()
-			self.waitingForKey = true
-		end
-	end
-	AceGUI:ClearFocus()
+local function Keybinding_OnHide()
+	local self = this.obj
+	this:EnableKeyboard(false)
+	this:EnableMouseWheel(false)
+	self.msgframe:Hide()
+	this:UnlockHighlight()
+	self.waitingForKey = nil
 end
 
 local ignoreKeys = {
 	["BUTTON1"] = true, ["BUTTON2"] = true,
 	["UNKNOWN"] = true,
-	["LSHIFT"] = true, ["LCTRL"] = true, ["LALT"] = true,
-	["RSHIFT"] = true, ["RCTRL"] = true, ["RALT"] = true,
+	["SHIFT"] = true, ["CTRL"] = true, ["ALT"] = true,
 }
 local function Keybinding_OnKeyDown()
 	local self = this.obj
@@ -87,17 +75,36 @@ local function Keybinding_OnKeyDown()
 	end
 end
 
-local function Keybinding_OnMouseDown(frame, arg1)
-	if arg1 == "LeftButton" or arg1 == "RightButton" then
-		return
-	elseif arg1 == "MiddleButton" then
-		arg1 = "BUTTON3"
-	elseif arg1 == "Button4" then
-		arg1 = "BUTTON4"
-	elseif arg1 == "Button5" then
-		arg1 = "BUTTON5"
+local function Keybinding_OnMouseDown()
+	getglobal(this:GetName().."Left"):SetTexture("Interface\\Buttons\\UI-Panel-Button-Down");
+	getglobal(this:GetName().."Middle"):SetTexture("Interface\\Buttons\\UI-Panel-Button-Down");
+	getglobal(this:GetName().."Right"):SetTexture("Interface\\Buttons\\UI-Panel-Button-Down");
+end
+
+local function Keybinding_OnMouseUp()
+	getglobal(this:GetName().."Left"):SetTexture("Interface\\Buttons\\UI-Panel-Button-Up");
+	getglobal(this:GetName().."Middle"):SetTexture("Interface\\Buttons\\UI-Panel-Button-Up");
+	getglobal(this:GetName().."Right"):SetTexture("Interface\\Buttons\\UI-Panel-Button-Up");
+	local self = this.obj
+	if MouseIsOver(this) and not self.disabled then
+		if self.waitingForKey then
+			if arg1 ~= "LeftButton" and arg1 ~= "RightButton" then
+				Keybinding_OnKeyDown()
+			end
+			this:EnableKeyboard(false)
+			this:EnableMouseWheel(false)
+			self.msgframe:Hide()
+			this:UnlockHighlight()
+			self.waitingForKey = nil
+		else
+			this:EnableKeyboard(true)
+			this:EnableMouseWheel(true)
+			self.msgframe:Show()
+			this:LockHighlight()
+			self.waitingForKey = true
+		end
 	end
-	Keybinding_OnKeyDown()
+	AceGUI:ClearFocus()
 end
 
 local function Keybinding_OnMouseWheel()
@@ -140,13 +147,10 @@ local methods = {
 	["SetKey"] = function(self, key)
 		if (key or "") == "" then
 			self.button:SetText(NOT_BOUND)
-			--dbg("self.button",self.button.GetHighlightFontObject)
-			--self.button:SetNormalFontObject("GameFontNormal")
-			self.button:GetFontString():SetFontObject("GameFontNormal")
+			self.text:SetFontObject("GameFontNormal")
 		else
 			self.button:SetText(key)
-			--self.button:SetNormalFontObject("GameFontHighlight")
-			self.button:GetFontString():SetFontObject("GameFontHighlight")
+			self.text:SetFontObject("GameFontHighlight")
 		end
 	end,
 
@@ -181,26 +185,29 @@ local ControlBackdrop  = {
 	insets = { left = 3, right = 3, top = 3, bottom = 3 }
 }
 
-local function keybindingMsgFixWidth(frame)
-	frame:SetWidth(frame.msg:GetWidth() + 10)
-	frame:SetScript("OnUpdate", nil)
+local function keybindingMsgFixWidth()
+	this:SetWidth(this.msg:GetWidth() + 10)
+	this:SetScript("OnUpdate", nil)
 end
 
 local function Constructor()
 	local name = "AceGUI30KeybindingButton" .. AceGUI:GetNextWidgetNum(Type)
 
 	local frame = CreateFrame("Frame", nil, UIParent)
-	local button = CreateFrame("Button", name, frame, "UIPanelButtonTemplate")
+	local button = CreateFrame("Button", name, frame, "UIPanelButtonTemplate2")
 
 	button:EnableMouse(true)
 	button:EnableMouseWheel(false)
-	button:RegisterForClicks("AnyDown")
 	button:SetScript("OnEnter", Control_OnEnter)
 	button:SetScript("OnLeave", Control_OnLeave)
-	button:SetScript("OnClick", Keybinding_OnClick)
+
 	button:SetScript("OnKeyDown", Keybinding_OnKeyDown)
+	button:RegisterForClicks("AnyDown","AnyUp")
+	-- Ace3v: RegisterForClicks means OnClick will not be triggered, so use OnKeyDown and OnKeyUp
 	button:SetScript("OnMouseDown", Keybinding_OnMouseDown)
+	button:SetScript("OnMouseUp", Keybinding_OnMouseUp)
 	button:SetScript("OnMouseWheel", Keybinding_OnMouseWheel)
+	button:SetScript("OnHide", Keybinding_OnHide)
 	button:SetPoint("BOTTOMLEFT",0,0)
 	button:SetPoint("BOTTOMRIGHT",0,0)
 	button:SetHeight(24)
@@ -238,7 +245,8 @@ local function Constructor()
 		msgframe    = msgframe,
 		frame       = frame,
 		alignoffset = 30,
-		type        = Type
+		type        = Type,
+		text        = text
 	}
 	for method, func in pairs(methods) do
 		widget[method] = func

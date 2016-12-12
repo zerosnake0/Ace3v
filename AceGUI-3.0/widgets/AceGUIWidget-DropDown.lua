@@ -17,50 +17,15 @@ local _G = AceCore._G
 -- List them here for Mikk's FindGlobals script
 -- GLOBALS: CLOSE
 
--- Ace3v: attention! this function is recursive
-local fixlevels
-do
-local function _fixlevels(child, lv)
-	child:SetFrameLevel(lv)
-	fixlevels(child, child:GetChildren())
-end
-
-function fixlevels(parent,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
-	local lv = parent:GetFrameLevel()+1
-	if a1 then _fixlevels(a1,lv) else return end
-	if a2 then _fixlevels(a2,lv) else return end
-	if a3 then _fixlevels(a3,lv) else return end
-	if a4 then _fixlevels(a4,lv) else return end
-	if a5 then _fixlevels(a5,lv) else return end
-	if a6 then _fixlevels(a6,lv) else return end
-	if a7 then _fixlevels(a7,lv) else return end
-	if a8 then _fixlevels(a8,lv) else return end
-	if a9 then _fixlevels(a9,lv) else return end
-	if a10 then _fixlevels(a10,lv) else return end
-end
-end -- fixlevels
-
--- Ace3v: attention! this function is recursive
-local function fixstrata(strata, parent, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
-	parent:SetFrameStrata(strata)
-	if a1 then fixstrata(strata,a1,a1:GetChildren()) else return end
-	if a2 then fixstrata(strata,a2,a2:GetChildren()) else return end
-	if a3 then fixstrata(strata,a3,a3:GetChildren()) else return end
-	if a4 then fixstrata(strata,a4,a4:GetChildren()) else return end
-	if a5 then fixstrata(strata,a5,a5:GetChildren()) else return end
-	if a6 then fixstrata(strata,a6,a6:GetChildren()) else return end
-	if a7 then fixstrata(strata,a7,a7:GetChildren()) else return end
-	if a8 then fixstrata(strata,a8,a8:GetChildren()) else return end
-	if a9 then fixstrata(strata,a9,a9:GetChildren()) else return end
-	if a10 then fixstrata(strata,a10,a10:GetChildren()) else return end
-end
+local fixlevels = AceGUI.fixlevels
+local fixstrata = AceGUI.fixstrata
 
 do
 	local widgetType = "Dropdown-Pullout"
 	local widgetVersion = 3
-	
+
 	--[[ Static data ]]--
-	
+
 	local backdrop = {
 		bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
 		edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
@@ -78,9 +43,9 @@ do
 
 	local defaultWidth = 200
 	local defaultMaxHeight = 600
-	
+
 	--[[ UI Event Handlers ]]--
-	
+
 	-- HACK: This should be no part of the pullout, but there
 	--       is no other 'clean' way to response to any item-OnEnter
 	--       Used to close Submenus when an other item is entered
@@ -92,22 +57,22 @@ do
 			end
 		end
 	end
-	
+
 	-- See the note in Constructor() for each scroll related function
 	local function OnMouseWheel()
 		this.obj:MoveScroll(arg1)
 	end
-	
+
 	local function OnScrollValueChanged()
 		this.obj:SetScroll(arg1)
 	end
-	
+
 	local function OnSizeChanged()
 		this.obj:FixScroll()
 	end
-	
+
 	--[[ Exported methods ]]--
-	
+
 	-- exported
 	local function SetScroll(self, value)
 		local status = self.scrollStatus
@@ -124,9 +89,9 @@ do
 		child:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, offset)
 		child:SetPoint("TOPRIGHT", frame, "TOPRIGHT", self.slider:IsShown() and -12 or 0, offset)
 		status.offset = offset
-		status.scrollvalue = value		
+		status.scrollvalue = value
 	end
-	
+
 	-- exported
 	local function MoveScroll(self, value)
 		local status = self.scrollStatus
@@ -145,7 +110,7 @@ do
 			self.slider:SetValue(min(max(status.scrollvalue + delta*(1000/(diff/45)),0), 1000))
 		end
 	end
-	
+
 	-- exported
 	local function FixScroll(self)
 		local status = self.scrollStatus
@@ -158,7 +123,7 @@ do
 			child:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, offset)
 			self.slider:SetValue(0)
 		else
-			self.slider:Show()			
+			self.slider:Show()
 			local value = (offset / (viewheight - height) * 1000)
 			if value > 1000 then value = 1000 end
 			self.slider:SetValue(value)
@@ -171,44 +136,44 @@ do
 			end
 		end
 	end
-	
+
 	-- exported, AceGUI callback
 	local function OnAcquire(self)
 		self.frame:SetParent(UIParent)
 		--self.itemFrame:SetToplevel(true)
 	end
-	
+
 	-- exported, AceGUI callback
 	local function OnRelease(self)
 		self:Clear()
 		self.frame:ClearAllPoints()
 		self.frame:Hide()
 	end
-	
+
 	-- exported
 	local function AddItem(self, item)
 		tinsert(self.items, item)
-		
+
 		local h = tgetn(self.items) * 16
 		self.itemFrame:SetHeight(h)
 		self.frame:SetHeight(min(h + 34, self.maxHeight)) -- +34: 20 for scrollFrame placement (10 offset) and +14 for item placement
-		
+
 		item.frame:SetPoint("LEFT", self.itemFrame, "LEFT")
 		item.frame:SetPoint("RIGHT", self.itemFrame, "RIGHT")
-		
+
 		item:SetPullout(self)
 		item:SetOnEnter(OnEnter)
 	end
-		
+
 	-- exported
-	local function Open(self, point, relFrame, relPoint, x, y)		
+	local function Open(self, point, relFrame, relPoint, x, y)
 		local items = self.items
 		local frame = self.frame
 		local itemFrame = self.itemFrame
-		
+
 		frame:SetPoint(point, relFrame, relPoint, x, y)
 
-				
+
 		local height = 8
 		for i, item in pairs(items) do
 			if i == 1 then
@@ -216,23 +181,23 @@ do
 			else
 				item:SetPoint("TOP", items[i-1].frame, "BOTTOM", 0, 1)
 			end
-			
+
 			item:Show()
-			
+
 			height = height + 16
 		end
 		itemFrame:SetHeight(height)
-		fixstrata("TOOLTIP", frame, frame:GetChildren())
+		fixstrata("TOOLTIP", frame)
 		frame:Show()
 		self:Fire("OnOpen")
-	end	
-	
+	end
+
 	-- exported
 	local function Close(self)
 		self.frame:Hide()
 		self:Fire("OnClose")
-	end	
-	
+	end
+
 	-- exported
 	local function Clear(self)
 		local items = self.items
@@ -241,18 +206,18 @@ do
 			items[i] = nil
 		end
 		tsetn(items,0)
-	end	
-	
+	end
+
 	-- exported
 	local function IterateItems(self)
 		return ipairs(self.items)
 	end
-	
+
 	-- exported
 	local function SetHideOnLeave(self, val)
 		self.hideOnLeave = val
 	end
-	
+
 	-- exported
 	local function SetMaxHeight(self, height)
 		self.maxHeight = height or defaultMaxHeight
@@ -262,19 +227,19 @@ do
 			self.frame:SetHeight(self.itemFrame:GetHeight() + 34) -- see :AddItem
 		end
 	end
-		
+
 	-- exported
 	local function GetRightBorderWidth(self)
 		return 6 + (self.slider:IsShown() and 12 or 0)
 	end
-	
+
 	-- exported
 	local function GetLeftBorderWidth(self)
 		return 6
 	end
-	
+
 	--[[ Constructor ]]--
-	
+
 	local function Constructor()
 		local count = AceGUI:GetNextWidgetNum(widgetType)
 		local frame = CreateFrame("Frame", "AceGUI30Pullout"..count, UIParent)
@@ -283,7 +248,7 @@ do
 		self.type = widgetType
 		self.frame = frame
 		frame.obj = self
-		
+
 		self.OnAcquire = OnAcquire
 		self.OnRelease = OnRelease
 
@@ -297,37 +262,37 @@ do
 		self.SetScroll  = SetScroll
 		self.MoveScroll = MoveScroll
 		self.FixScroll  = FixScroll
-		
+
 		self.SetMaxHeight = SetMaxHeight
 		self.GetRightBorderWidth = GetRightBorderWidth
 		self.GetLeftBorderWidth = GetLeftBorderWidth
-		
+
 		self.items = {}
-		
+
 		self.scrollStatus = {
 			scrollvalue = 0,
 		}
-		
+
 		self.maxHeight = defaultMaxHeight
-			
+
 		frame:SetBackdrop(backdrop)
 		frame:SetBackdropColor(0, 0, 0)
 		frame:SetFrameStrata("FULLSCREEN_DIALOG")
 		frame:SetClampedToScreen(true)
 		frame:SetWidth(defaultWidth)
-		frame:SetHeight(self.maxHeight)	
+		frame:SetHeight(self.maxHeight)
 		--frame:SetToplevel(true)
-	
+
 		-- NOTE: The whole scroll frame code is copied from the AceGUI-3.0 widget ScrollFrame
 		local scrollFrame = CreateFrame("ScrollFrame", nil, frame)
 		local itemFrame = CreateFrame("Frame", nil, scrollFrame)
-		
+
 		self.scrollFrame = scrollFrame
 		self.itemFrame = itemFrame
-		
+
 		scrollFrame.obj = self
 		itemFrame.obj = self
-		
+
 		local slider = CreateFrame("Slider", "AceGUI30PulloutScrollbar"..count, scrollFrame)
 		slider:SetOrientation("VERTICAL")
 		slider:SetHitRectInsets(0, 0, -10, 0)
@@ -337,7 +302,7 @@ do
 		slider:SetFrameStrata("FULLSCREEN_DIALOG")
 		self.slider = slider
 		slider.obj = self
-					
+
 		scrollFrame:SetScrollChild(itemFrame)
 		scrollFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", 6, -12)
 		scrollFrame:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -6, 12)
@@ -346,46 +311,46 @@ do
 		scrollFrame:SetScript("OnSizeChanged", OnSizeChanged)
 		scrollFrame:SetToplevel(true)
 		scrollFrame:SetFrameStrata("FULLSCREEN_DIALOG")
-		
+
 		itemFrame:SetPoint("TOPLEFT", scrollFrame, "TOPLEFT", 0, 0)
 		itemFrame:SetPoint("TOPRIGHT", scrollFrame, "TOPRIGHT", -12, 0)
 		itemFrame:SetHeight(400)
 		itemFrame:SetToplevel(true)
 		itemFrame:SetFrameStrata("FULLSCREEN_DIALOG")
-		
+
 		slider:SetPoint("TOPLEFT", scrollFrame, "TOPRIGHT", -16, 0)
 		slider:SetPoint("BOTTOMLEFT", scrollFrame, "BOTTOMRIGHT", -16, 0)
 		slider:SetScript("OnValueChanged", OnScrollValueChanged)
 		slider:SetMinMaxValues(0, 1000)
 		slider:SetValueStep(1)
 		slider:SetValue(0)
-		
+
 		scrollFrame:Show()
 		itemFrame:Show()
 		slider:Hide()
-						
+
 		self:FixScroll()
-		
+
 		AceGUI:RegisterAsWidget(self)
 		return self
 	end
-	
+
 	AceGUI:RegisterWidgetType(widgetType, Constructor, widgetVersion)
 end
 
 do
 	local widgetType = "Dropdown"
 	local widgetVersion = 30
-	
+
 	--[[ Static data ]]--
-	
+
 	--[[ UI event handler ]]--
-	
+
 	local function Control_OnEnter()
 		this.obj.button:LockHighlight()
 		this.obj:Fire("OnEnter")
 	end
-	
+
 	local function Control_OnLeave()
 		this.obj.button:UnlockHighlight()
 		this.obj:Fire("OnLeave")
@@ -397,7 +362,7 @@ do
 			self.pullout:Close()
 		end
 	end
-	
+
 	local function Dropdown_TogglePullout()
 		local self = this.obj
 		PlaySound("igMainMenuOptionCheckBoxOn") -- missleading name, but the Blizzard code uses this sound
@@ -412,17 +377,17 @@ do
 			AceGUI:SetFocus(self)
 		end
 	end
-	
+
 	local function OnPulloutOpen(this)
 		local self = this.userdata.obj
 		local value = self.value
-		
+
 		if not self.multiselect then
 			for i, item in this:IterateItems() do
 				item:SetValue(item.userdata.value == value)
 			end
 		end
-		
+
 		self.open = true
 		self:Fire("OnOpened")
 	end
@@ -432,7 +397,7 @@ do
 		self.open = nil
 		self:Fire("OnClosed")
 	end
-	
+
 	local function ShowMultiText(self)
 		local text
 		for i, widget in self.pullout:IterateItems() do
@@ -448,10 +413,10 @@ do
 		end
 		self:SetText(text)
 	end
-	
-	local function OnItemValueChanged(this, event, checked)
+
+	local function OnItemValueChanged(this, event, _, checked)
 		local self = this.userdata.obj
-		
+
 		if self.multiselect then
 			self:Fire("OnValueChanged", 2, this.userdata.value, checked)
 			ShowMultiText(self)
@@ -459,17 +424,20 @@ do
 			if checked then
 				self:SetValue(this.userdata.value)
 				self:Fire("OnValueChanged", 1, this.userdata.value)
+				this:SetValue(false)
 			else
+				self:SetValue(nil)
+				self:Fire("OnValueChanged", 1, nil)
 				this:SetValue(true)
 			end
-			if self.open then	
+			if self.open then
 				self.pullout:Close()
 			end
 		end
 	end
-	
+
 	--[[ Exported methods ]]--
-	
+
 	-- exported, AceGUI callback
 	local function OnAcquire(self)
 		local pullout = AceGUI:Create("Dropdown-Pullout")
@@ -478,14 +446,15 @@ do
 		pullout:SetCallback("OnClose", OnPulloutClose)
 		pullout:SetCallback("OnOpen", OnPulloutOpen)
 		self.pullout.frame:SetFrameLevel(self.frame:GetFrameLevel() + 1)
-		fixlevels(self.pullout.frame, self.pullout.frame:GetChildren())
-		
+		local frame = self.pullout.frame
+		fixlevels(frame)
+
 		self:SetHeight(44)
 		self:SetWidth(200)
 		self:SetLabel()
 		self:SetPulloutWidth(nil)
 	end
-	
+
 	-- exported, AceGUI callback
 	local function OnRelease(self)
 		if self.open then
@@ -493,20 +462,20 @@ do
 		end
 		AceGUI:Release(self.pullout)
 		self.pullout = nil
-		
+
 		self:SetText("")
 		self:SetDisabled(false)
 		self:SetMultiselect(false)
-		
+
 		self.value = nil
 		self.list = nil
 		self.open = nil
 		self.hasClose = nil
-		
+
 		self.frame:ClearAllPoints()
 		self.frame:Hide()
 	end
-	
+
 	-- exported
 	local function SetDisabled(self, disabled)
 		self.disabled = disabled
@@ -522,19 +491,19 @@ do
 			self.text:SetTextColor(1,1,1)
 		end
 	end
-	
+
 	-- exported
 	local function ClearFocus(self)
 		if self.open then
 			self.pullout:Close()
 		end
 	end
-	
+
 	-- exported
 	local function SetText(self, text)
 		self.text:SetText(text or "")
 	end
-	
+
 	-- exported
 	local function SetLabel(self, text)
 		if text and text ~= "" then
@@ -551,7 +520,7 @@ do
 			self.alignoffset = 12
 		end
 	end
-	
+
 	-- exported
 	local function SetValue(self, value)
 		if self.list then
@@ -559,12 +528,12 @@ do
 		end
 		self.value = value
 	end
-	
+
 	-- exported
 	local function GetValue(self)
 		return self.value
 	end
-	
+
 	-- exported
 	local function SetItemValue(self, item, value)
 		if not self.multiselect then return end
@@ -577,7 +546,7 @@ do
 		end
 		ShowMultiText(self)
 	end
-	
+
 	-- exported
 	local function SetItemDisabled(self, item, disabled)
 		for i, widget in self.pullout:IterateItems() do
@@ -586,7 +555,7 @@ do
 			end
 		end
 	end
-	
+
 	local function AddListItem(self, value, text, itemType)
 		if not itemType then itemType = "Dropdown-Item-Toggle" end
 		local exists = AceGUI:GetWidgetVersion(itemType)
@@ -599,7 +568,7 @@ do
 		item:SetCallback("OnValueChanged", OnItemValueChanged)
 		self.pullout:AddItem(item)
 	end
-	
+
 	local function AddCloseButton(self)
 		if not self.hasClose then
 			local close = AceGUI:Create("Dropdown-Item-Execute")
@@ -608,7 +577,7 @@ do
 			self.hasClose = true
 		end
 	end
-	
+
 	-- exported
 	local sortlist = {}
 	local function SetList(self, list, order, itemType)
@@ -616,19 +585,13 @@ do
 		self.pullout:Clear()
 		self.hasClose = nil
 		if not list then return end
-		
+
 		if type(order) ~= "table" then
 			for v in pairs(list) do
 				tinsert(sortlist, v)
-				dbg('insert',v)
 			end
-			dbg('...**',tgetn(sortlist))
-			for a,b in sortlist do
-				dbg(a,b)
-			end
-			dbg('...**')
 			tsort(sortlist)
-			
+
 			for i, key in ipairs(sortlist) do
 				AddListItem(self, key, list[key], itemType)
 				sortlist[i] = nil
@@ -644,7 +607,7 @@ do
 			AddCloseButton(self)
 		end
 	end
-	
+
 	-- exported
 	local function AddItem(self, value, text, itemType)
 		if self.list then
@@ -652,7 +615,7 @@ do
 			AddListItem(self, value, text, itemType)
 		end
 	end
-	
+
 	-- exported
 	local function SetMultiselect(self, multi)
 		self.multiselect = multi
@@ -661,23 +624,23 @@ do
 			AddCloseButton(self)
 		end
 	end
-	
+
 	-- exported
 	local function GetMultiselect(self)
 		return self.multiselect
 	end
-	
+
 	local function SetPulloutWidth(self, width)
 		self.pulloutWidth = width
 	end
-	
+
 	--[[ Constructor ]]--
-	
+
 	local function Constructor()
 		local count = AceGUI:GetNextWidgetNum(widgetType)
 		local frame = CreateFrame("Frame", nil, UIParent)
 		local dropdown = CreateFrame("Frame", "AceGUI30DropDown"..count, frame, "UIDropDownMenuTemplate")
-		
+
 		local self = {}
 		self.type = widgetType
 		self.frame = frame
@@ -685,10 +648,10 @@ do
 		self.count = count
 		frame.obj = self
 		dropdown.obj = self
-		
+
 		self.OnRelease   = OnRelease
 		self.OnAcquire   = OnAcquire
-		
+
 		self.ClearFocus  = ClearFocus
 
 		self.SetText     = SetText
@@ -703,9 +666,9 @@ do
 		self.SetItemValue = SetItemValue
 		self.SetItemDisabled = SetItemDisabled
 		self.SetPulloutWidth = SetPulloutWidth
-		
+
 		self.alignoffset = 26
-		
+
 		frame:SetScript("OnHide",Dropdown_OnHide)
 
 		dropdown:ClearAllPoints()
@@ -716,10 +679,10 @@ do
 		local left = _G[dropdown:GetName() .. "Left"]
 		local middle = _G[dropdown:GetName() .. "Middle"]
 		local right = _G[dropdown:GetName() .. "Right"]
-		
+
 		middle:ClearAllPoints()
 		right:ClearAllPoints()
-		
+
 		middle:SetPoint("LEFT", left, "RIGHT", 0, 0)
 		middle:SetPoint("RIGHT", right, "LEFT", 0, 0)
 		right:SetPoint("TOPRIGHT", dropdown, "TOPRIGHT", 0, 17)
@@ -730,7 +693,7 @@ do
 		button:SetScript("OnEnter",Control_OnEnter)
 		button:SetScript("OnLeave",Control_OnLeave)
 		button:SetScript("OnClick",Dropdown_TogglePullout)
-		
+
 		local button_cover = CreateFrame("BUTTON",nil,self.frame)
 		self.button_cover = button_cover
 		button_cover.obj = self
@@ -739,14 +702,14 @@ do
 		button_cover:SetScript("OnEnter",Control_OnEnter)
 		button_cover:SetScript("OnLeave",Control_OnLeave)
 		button_cover:SetScript("OnClick",Dropdown_TogglePullout)
-		
+
 		local text = _G[dropdown:GetName() .. "Text"]
 		self.text = text
 		text.obj = self
 		text:ClearAllPoints()
 		text:SetPoint("RIGHT", right, "RIGHT" ,-43, 2)
 		text:SetPoint("LEFT", left, "LEFT", 25, 2)
-		
+
 		local label = frame:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
 		label:SetPoint("TOPLEFT",frame,"TOPLEFT",0,0)
 		label:SetPoint("TOPRIGHT",frame,"TOPRIGHT",0,0)
@@ -758,6 +721,6 @@ do
 		AceGUI:RegisterAsWidget(self)
 		return self
 	end
-	
+
 	AceGUI:RegisterWidgetType(widgetType, Constructor, widgetVersion)
-end	
+end

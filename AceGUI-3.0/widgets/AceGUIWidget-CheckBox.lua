@@ -55,6 +55,7 @@ local function CheckBox_OnMouseDown()
 end
 
 local function CheckBox_OnMouseUp()
+
 	local self = this.obj
 	if not self.disabled then
 		self:ToggleChecked()
@@ -172,6 +173,7 @@ local methods = {
 			highlight:SetTexture("Interface\\Buttons\\UI-CheckBox-Highlight")
 			highlight:SetTexCoord(0, 1, 0, 1)
 		end
+
 		checkbg:SetHeight(size)
 		checkbg:SetWidth(size)
 	end,
@@ -220,11 +222,11 @@ local methods = {
 			self:SetHeight(24)
 		end
 	end,
-	
+
 	["SetImage"] = function(self, path, a1,a2,a3,a4,a5,a6,a7,a8)
 		local image = self.image
 		image:SetTexture(path)
-		
+
 		if image:GetTexture() then
 			if a4 or a8 then
 				image:SetTexCoord(a1,a2,a3,a4,a5,a6,a7,a8)

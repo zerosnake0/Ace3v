@@ -15,7 +15,7 @@ local CreateFrame = CreateFrame
 --[[-----------------------------------------------------------------------------
 Scripts
 -------------------------------------------------------------------------------]]
-local function SelectedGroup(self, event, value)
+local function SelectedGroup(self, event, _, value)
 	local group = self.parentgroup
 	local status = group.status or group.localstatus
 	status.selected = value

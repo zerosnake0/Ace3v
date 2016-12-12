@@ -18,16 +18,16 @@ local CreateFrame, UIParent = CreateFrame, UIParent
 --[[-----------------------------------------------------------------------------
 Scripts
 -------------------------------------------------------------------------------]]
-local function Control_OnEnter(frame)
-	frame.obj:Fire("OnEnter")
+local function Control_OnEnter()
+	this.obj:Fire("OnEnter")
 end
 
-local function Control_OnLeave(frame)
-	frame.obj:Fire("OnLeave")
+local function Control_OnLeave()
+	this.obj:Fire("OnLeave")
 end
 
-local function Label_OnClick(frame, button)
-	frame.obj:Fire("OnClick", button)
+local function Label_OnClick()
+	this.obj:Fire("OnClick", 1, arg1)
 	AceGUI:ClearFocus()
 end
 

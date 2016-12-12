@@ -14,16 +14,16 @@ local CreateFrame, UIParent = CreateFrame, UIParent
 --[[-----------------------------------------------------------------------------
 Scripts
 -------------------------------------------------------------------------------]]
-local function Control_OnEnter(frame)
-	frame.obj:Fire("OnEnter")
+local function Control_OnEnter()
+	this.obj:Fire("OnEnter")
 end
 
-local function Control_OnLeave(frame)
-	frame.obj:Fire("OnLeave")
+local function Control_OnLeave()
+	this.obj:Fire("OnLeave")
 end
 
-local function Button_OnClick(frame, button)
-	frame.obj:Fire("OnClick", button)
+local function Button_OnClick()
+	this.obj:Fire("OnClick", 1, arg1)
 	AceGUI:ClearFocus()
 end
 
@@ -56,7 +56,7 @@ local methods = {
 	["SetImage"] = function(self, path, a1,a2,a3,a4,a5,a6,a7,a8)
 		local image = self.image
 		image:SetTexture(path)
-		
+
 		if image:GetTexture() then
 			if a4 or a8 then
 				image:SetTexCoord(a1,a2,a3,a4,a5,a6,a7,a8)

@@ -5,8 +5,6 @@ local Type, Version = "ColorPicker", 23
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then return end
 
-local IsLegion = false
-
 -- Lua APIs
 local pairs = pairs
 
@@ -53,7 +51,6 @@ local function ColorSwatch_OnClick()
 	local self = this.obj
 	if not self.disabled then
 		ColorPickerFrame:SetFrameStrata("FULLSCREEN_DIALOG")
-		ColorPickerFrame:SetFrameLevel(this:GetFrameLevel() + 10)
 		ColorPickerFrame:SetClampedToScreen(true)
 
 		ColorPickerFrame.func = function()
@@ -148,11 +145,7 @@ local function Constructor()
 	local texture = frame:CreateTexture(nil, "BACKGROUND")
 	texture:SetWidth(16)
 	texture:SetHeight(16)
-	if IsLegion then
-		texture:SetColorTexture(1, 1, 1)
-	else
-		texture:SetTexture(1, 1, 1)
-	end
+	texture:SetTexture(1, 1, 1)
 	texture:SetPoint("CENTER", colorSwatch)
 	texture:Show()
 

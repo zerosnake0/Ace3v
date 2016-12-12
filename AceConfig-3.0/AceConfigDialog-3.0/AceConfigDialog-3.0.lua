@@ -83,6 +83,7 @@ do
 		for k, v in pairs(t) do
 			c[k] = v
 		end
+		tsetn(c, tgetn(t))
 		return c
 	end
 	function del(t)
@@ -154,7 +155,6 @@ local function GetOptionsMemberValue(membername, option, options, path, appName,
 	--get definition for the member
 	local inherits = isInherited[membername]
 
-
 	--get the member of the option, traversing the tree if it can be inherited
 	local member
 
@@ -182,11 +182,13 @@ local function GetOptionsMemberValue(membername, option, options, path, appName,
 		local group = options
 		handler = group.handler or handler
 
-		for i = 1, tgetn(path) do
+		local l = tgetn(path)
+		for i = 1, l do
 			group = GetSubOption(group, path[i])
 			info[i] = path[i]
 			handler = group.handler or handler
 		end
+		tsetn(info, l)
 
 		info.options = options
 		info.appName = appName
@@ -450,6 +452,8 @@ function AceConfigDialog:SelectGroup(appName, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	args[10] = a10
 	for n = 1, 10 do
 		local key = args[n]
+		arg[n] = nil
+
 		if not key then break end
 
 		if group.childGroups == "tab" or group.childGroups == "select" then
@@ -553,7 +557,7 @@ local function confirmPopup(appName, rootframe, basepath, info, message, func, a
 	t.preferredIndex = STATICPOPUP_NUMDIALOGS
 	local dialog, oldstrata
 	t.OnAccept = function()
-		safecall(func, unpack(t))
+		safecall(func, tgetn(t), unpack(t))
 		if dialog and oldstrata then
 			dialog:SetFrameStrata(oldstrata)
 		end
@@ -595,7 +599,7 @@ local function confirmPopup(appName, rootframe, basepath, info, message, func, a
 	end
 end
 
-local function ActivateControl(widget, event, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+local function ActivateControl(widget, event, argc, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	--This function will call the set / execute handler for the widget
 	--widget:GetUserDataTable() contains the needed info
 	local user = widget:GetUserDataTable()
@@ -618,7 +622,9 @@ local function ActivateControl(widget, event, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	handler = group.handler or handler
 	confirm = group.confirm
 	validate = group.validate
-	for i = 1, tgetn(path) do
+
+	local l = tgetn(path)
+	for i = 1, l do
 		local v = path[i]
 		group = GetSubOption(group, v)
 		info[i] = v
@@ -633,6 +639,7 @@ local function ActivateControl(widget, event, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 			validate = group.validate
 		end
 	end
+	tsetn(info, l)
 
 	info.options = options
 	info.appName = user.appName
@@ -644,6 +651,7 @@ local function ActivateControl(widget, event, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	info.uiName = MAJOR
 
 	local name
+
 	if type(option.name) == "function" then
 		name = option.name(info)
 	elseif type(option.name) == "string" then
@@ -664,7 +672,6 @@ local function ActivateControl(widget, event, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 		end
 	end
 
-	local argc = countargs(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	local success
 	if validated and option.type ~= "execute" then
 		if type(validate) == "string" then
@@ -784,8 +791,6 @@ local function ActivateControl(widget, event, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 			safecall(func, argc+1, info, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 		end
 
-
-
 		local iscustom = user.rootframe:GetUserData("iscustom")
 		local basepath = user.rootframe:GetUserData("basepath") or emptyTbl
 		--full refresh of the frame, some controls dont cause this on all events
@@ -821,7 +826,7 @@ local function ActivateControl(widget, event, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	del(info)
 end
 
-local function ActivateSlider(widget, event, value)
+local function ActivateSlider(widget, event, _, value)
 	local option = widget:GetUserData("option")
 	local min, max, step = option.min or (not option.softMin and 0 or nil), option.max or (not option.softMax and 100 or nil), option.step
 	if min then
@@ -838,8 +843,8 @@ end
 
 --called from a checkbox that is part of an internally created multiselect group
 --this type is safe to refresh on activation of one control
-local function ActivateMultiControl(widget, event, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
-	ActivateControl(widget, event, widget:GetUserData("value"), a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+local function ActivateMultiControl(widget, event, argc, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+	ActivateControl(widget, event, argc+1, widget:GetUserData("value"), a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	local user = widget:GetUserDataTable()
 	local iscustom = user.rootframe:GetUserData("iscustom")
 	local basepath = user.rootframe:GetUserData("basepath") or emptyTbl
@@ -1016,9 +1021,12 @@ end
 
 local function InjectInfo(control, options, option, path, rootframe, appName)
 	local user = control:GetUserDataTable()
-	for i = 1, tgetn(path) do
+	local l = tgetn(path)
+	for i = 1, l do
 		user[i] = path[i]
 	end
+	tsetn(user,l)
+
 	user.rootframe = rootframe
 	user.option = option
 	user.options = options
@@ -1206,6 +1214,7 @@ local function FeedOptions(appName, options,container,rootframe,path,group,inlin
 						if not control then
 							geterrorhandler()(format("Invalid Custom Control Type - %s", tostring(controlType)))
 							control = gui:Create("Dropdown")
+
 						end
 						local itemType = v.itemControl
 						if itemType and not gui:GetWidgetVersion(itemType) then
@@ -1224,6 +1233,7 @@ local function FeedOptions(appName, options,container,rootframe,path,group,inlin
 
 				elseif v.type == "multiselect" then
 					local values = GetOptionsMemberValue("values", v, options, path, appName)
+
 					local disabled = CheckOptionDisabled(v, options, path, appName)
 
 					local controlType = v.dialogControl or v.control
@@ -1404,7 +1414,7 @@ local function BuildPath(path, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	end
 end
 
-local function TreeOnButtonEnter(widget, event, uniquevalue, button)
+local function TreeOnButtonEnter(widget, event, _, uniquevalue, button)
 	local user = widget:GetUserDataTable()
 	if not user then return end
 	local options = user.options
@@ -1413,9 +1423,11 @@ local function TreeOnButtonEnter(widget, event, uniquevalue, button)
 	local appName = user.appName
 
 	local feedpath = new()
-	for i = 1, tgetn(path) do
+	local l = tgetn(path)
+	for i = 1, l do
 		feedpath[i] = path[i]
 	end
+	tsetn(feedpath,l)
 
 	BuildPath(feedpath, strsplit("\001", uniquevalue))
 	local group = options
@@ -1443,19 +1455,21 @@ local function TreeOnButtonEnter(widget, event, uniquevalue, button)
 	GameTooltip:Show()
 end
 
-local function TreeOnButtonLeave(widget, event, value, button)
+local function TreeOnButtonLeave(widget, event, _, value, button)
 	GameTooltip:Hide()
 end
 
 
 local function GroupExists(appName, options, path, uniquevalue)
-	if not uniquevalue then return false end
 
+	if not uniquevalue then return false end
 	local feedpath = new()
 	local temppath = new()
-	for i = 1, tgetn(path) do
+	local l = tgetn(path)
+	for i = 1, l do
 		feedpath[i] = path[i]
 	end
+	tsetn(feedpath,l)
 
 	BuildPath(feedpath, strsplit("\001", uniquevalue))
 
@@ -1476,7 +1490,8 @@ local function GroupExists(appName, options, path, uniquevalue)
 	return true
 end
 
-local function GroupSelected(widget, event, uniquevalue)
+local function GroupSelected(widget, event, _, uniquevalue)
+	if not uniquevalue then widget:ReleaseChildren() return end
 
 	local user = widget:GetUserDataTable()
 
@@ -1486,9 +1501,11 @@ local function GroupSelected(widget, event, uniquevalue)
 	local rootframe = user.rootframe
 
 	local feedpath = new()
-	for i = 1, tgetn(path) do
+	local l = tgetn(path)
+	for i = 1, l do
 		feedpath[i] = path[i]
 	end
+	tsetn(feedpath,l)
 
 	BuildPath(feedpath, strsplit("\001", uniquevalue))
 	local group = options
@@ -1496,6 +1513,7 @@ local function GroupSelected(widget, event, uniquevalue)
 		group = GetSubOption(group, feedpath[i])
 	end
 	widget:ReleaseChildren()
+
 	AceConfigDialog:FeedGroup(user.appName,options,widget,rootframe,feedpath)
 
 	del(feedpath)
@@ -1520,6 +1538,7 @@ Rules:
 --]]
 
 function AceConfigDialog:FeedGroup(appName,options,container,rootframe,path, isRoot)
+
 	local group = options
 	--follow the path to get to the curent group
 	local inline
@@ -1631,7 +1650,7 @@ function AceConfigDialog:FeedGroup(appName,options,container,rootframe,path, isR
 
 			local firstgroup = orderlist[1]
 			if firstgroup then
-				select:SetGroup((GroupExists(appName, options, path,status.groups.selected) and status.groups.selected) or firstgroup)
+				select:SetGroup((GroupExists(appName, options, path, status.groups.selected) and status.groups.selected) or firstgroup)
 			end
 
 			select.width = "fill"

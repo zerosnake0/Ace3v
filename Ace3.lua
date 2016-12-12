@@ -39,7 +39,7 @@ local function RefreshConfigs()
 	end
 end
 
-local function ConfigSelected(widget, event, value)
+local function ConfigSelected(widget, event, _, value)
 	selectedgroup = value
 	dialog:Open(value, widget)
 end

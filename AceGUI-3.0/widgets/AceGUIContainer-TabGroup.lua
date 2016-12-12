@@ -98,15 +98,6 @@ local methods = {
 		self:SetTitle()
 	end,
 
-	["OnSetParent"] = function(self, parent)
-		local lv = self.frame:GetFrameLevel()
-		self.border:SetFrameLevel(lv+2)
-		lv = lv + 3
-		for _, tab in pairs(self.tabs) do
-			tab:SetFrameLevel(lv)
-		end
-	end,
-
 	["OnRelease"] = function(self)
 		self.status = nil
 		for k in pairs(self.localstatus) do
@@ -218,9 +209,14 @@ local methods = {
 			end
 
 			tab:Show()
-			tab:SetText(v.text)
-			tab:SetDisabled(v.disabled)
-			tab.value = v.value
+			if type(v) == "table" then
+				tab:SetText(v.text)
+				tab:SetDisabled(v.disabled)
+				tab.value = v.value
+			elseif type(v) == "string" then
+				tab:SetText(v)
+				tab.value = v
+			end
 
 			widths[i] = tab:GetWidth() - 6 --tabs are anchored 10 pixels from the right side of the previous one to reduce spacing, but add a fixed 4px padding for the text
 		end

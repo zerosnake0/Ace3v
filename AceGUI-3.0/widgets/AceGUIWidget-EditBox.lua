@@ -7,6 +7,8 @@ if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then return end
 
 local AceCore = LibStub("AceCore-3.0")
 local hooksecurefunc = AceCore.hooksecurefunc
+local _G = AceCore._G
+local GetCursorInfo = _G.GetCursorInfo
 
 -- Lua APIs
 local tostring, pairs = tostring, pairs
@@ -15,7 +17,6 @@ local tostring, pairs = tostring, pairs
 local PlaySound = PlaySound
 local GetCursorInfo, ClearCursor, GetSpellInfo = GetCursorInfo, ClearCursor, GetSpellInfo
 local CreateFrame, UIParent = CreateFrame, UIParent
-local _G = AceCore._G
 local strlen = string.len
 
 -- Global vars/functions that we don't upvalue since they might get hooked, or upgraded
@@ -169,6 +170,31 @@ local function EditBox_OnEnterPressed()
 	end
 end
 
+local function EditBox_OnReceiveDrag()
+	if not GetCursorInfo then return end
+	local self = this.obj
+	local type, id, info = GetCursorInfo()
+	if type == "item" then
+		self:SetText(info)
+		self:Fire("OnEnterPressed", 1, info)
+		ClearCursor()
+	elseif type == "spell" then
+		local spell, rank = GetSpellName(id, info)
+		if rank ~= "" then spell = spell.."("..rank..")" end
+		self:SetText(spell)
+		self:Fire("OnEnterPressed", 1, spell)
+		ClearCursor()
+	elseif type == "macro" then
+		local name = GetMacroInfo(id)
+		self:SetText(name)
+		self:Fire("OnEnterPressed", 1, name)
+		ClearCursor()
+	end
+	HideButton(self)
+	AceGUI:ClearFocus()
+end
+
+
 local function EditBox_OnTextChanged()
 	local self = this.obj
 	local value = this:GetText()
@@ -185,7 +211,7 @@ local function EditBox_OnFocusGained()
 end
 
 local function EditBox_OnFocusLost()
-	this.hasfocus = false
+	this.hasfocus = nil
 end
 
 local function Button_OnClick()
@@ -209,12 +235,6 @@ local methods = {
 		self:SetMaxLetters(0)
 	end,
 
-	["OnSetParent"] = function(self, parent)
-		local lv = self.frame:GetFrameLevel()
-		self.editbox:SetFrameLevel(lv+1)
-		self.button:SetFrameLevel(lv+2)
-	end,
-
 	["OnRelease"] = function(self)
 		self:ClearFocus()
 	end,
@@ -236,7 +256,6 @@ local methods = {
 	["SetText"] = function(self, text)
 		self.lasttext = text or ""
 		self.editbox:SetText(text or "")
-		--self.editbox:SetCursorPosition(0)
 		self.editbox:HighlightText(0)
 		HideButton(self)
 	end,
@@ -305,6 +324,8 @@ local function Constructor()
 	editbox:SetScript("OnEscapePressed", EditBox_OnEscapePressed)
 	editbox:SetScript("OnEnterPressed", EditBox_OnEnterPressed)
 	editbox:SetScript("OnTextChanged", EditBox_OnTextChanged)
+	editbox:SetScript("OnReceiveDrag", EditBox_OnReceiveDrag)
+	editbox:SetScript("OnMouseDown", EditBox_OnReceiveDrag)
 	editbox:SetScript("OnEditFocusGained", EditBox_OnFocusGained)
 	editbox:SetScript("OnEditFocusLost", EditBox_OnFocusLost)
 	editbox:SetTextInsets(0, 0, 3, 3)

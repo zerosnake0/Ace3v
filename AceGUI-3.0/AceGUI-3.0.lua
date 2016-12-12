@@ -105,6 +105,35 @@ do
 	end
 end
 
+-- Ace3v: when a container contains many children, we can only use the variable arguments
+local function _fixlevels(parent, ...)
+	local lv = parent:GetFrameLevel() + 1
+	for i = 1, tgetn(arg) do
+		local child = arg[i]
+		child:SetFrameLevel(lv)
+		_fixlevels(child, child:GetChildren())
+	end
+end
+
+local function fixlevels(parent)
+	return _fixlevels(parent, parent:GetChildren())
+end
+AceGUI.fixlevels = fixlevels
+
+-- Ace3v: attention! this function is recursive
+local function _fixstrata(strata, parent, ...)
+	parent:SetFrameStrata(strata)
+	for i = 1, tgetn(arg) do
+		local child = arg[i]
+		_fixstrata(strata, child, child:GetChildren())
+	end
+end
+
+local function fixstrata(strata, parent)
+	return _fixstrata(strata, parent, parent:GetChildren())
+end
+AceGUI.fixstrata = fixstrata
+
 
 -------------------
 -- API Functions --
@@ -237,9 +266,7 @@ do
 		frame:SetParent(nil)
 		frame:SetParent(parent.content)
 		self.parent = parent
-		if self.OnSetParent then
-			self:OnSetParent(parent)
-		end
+		fixlevels(frame)
 	end
 
 	WidgetBase.SetCallback = function(self, name, func)
@@ -249,10 +276,10 @@ do
 	end
 
 	WidgetBase.Fire = function(self,name,argc,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
-		dbg("fire",self,name,argc,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 		argc = argc or 0
-		if self.events[name] then
-			local success, ret = safecall(self.events[name],argc+2,self,name,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+		local func = self.events[name]
+		if func then
+			local success, ret = safecall(func,argc+3,self,name,argc,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 			if success then
 				return ret
 			end
@@ -418,6 +445,8 @@ do
 		args[10] = a10
 		for i = 1,10 do
 			local child = args[i]
+			arg[i] = nil
+
 			if not child then break end
 			tinsert(self.children, child)
 			child:SetParent(self)
