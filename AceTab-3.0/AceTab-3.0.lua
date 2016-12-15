@@ -63,7 +63,7 @@ local function hookFrame(f)
 		end
 	end)
 	f.at3curMatch = 0
-	f.at3matches = new("AceTab -> at3matches")
+	f.at3matches = new()
 end
 
 local firstPMLength
@@ -112,7 +112,7 @@ function AceTab:RegisterTabCompletion(descriptor, prematches, wordlist, usagefun
 		pmtable = prematches
 		notfallbacks[descriptor] = true
 	else
-		pmtable = new("AceTab -> prematches")
+		pmtable = new()
 		-- Mark this group as a fallback group if no value was passed.
 		if not prematches then
 			pmtable[1] = ""
@@ -154,7 +154,7 @@ function AceTab:RegisterTabCompletion(descriptor, prematches, wordlist, usagefun
 
 	-- Everything checks out; register this completion.
 	if not registry[descriptor] then
-		local tmp = new("AceTab -> registry[descriptor]")
+		local tmp = new()
 		tmp.prematches = pmtable
 		tmp.wordlist = wordlist
 		tmp.usagefunc = usagefunc
@@ -172,8 +172,8 @@ end
 function AceTab:UnregisterTabCompletion(descriptor)
 	local tmp = registry[descriptor]
 	if tmp then
-		del(tmp.prematches, "AceTab <- prematches")
-		del(tmp, "AceTab <- registry[descriptor]")
+		del(tmp.prematches)
+		del(tmp)
 	end
 	registry[descriptor] = nil
 	pmolengths[descriptor] = nil	-- number values
@@ -303,11 +303,11 @@ local function fillMatches(this, desc, fallback)
 					local wordlist = entry.wordlist
 					local cands = type(wordlist) == 'table' and wordlist or false
 					if type(wordlist) == 'function' then
-						cands = new("AceTab -> cands")
+						cands = new()
 						wordlist(cands, text_all, prematchEnd + 1, text_pmendToCursor)
 					end
 					if cands ~= false then
-						matches = this.at3matches[desc] or new("AceTab -> matches")
+						matches = this.at3matches[desc] or new()
 						for i in pairs(matches) do matches[i] = nil end
 
 						-- Check each of the entries in cands to see if it completes the word before the cursor.
@@ -326,12 +326,12 @@ local function fillMatches(this, desc, fallback)
 						if numMatches > 0 then
 							this.at3matches[desc] = matches
 						else
-							del(matches, "AceTab <- matches")
+							del(matches)
 							this.at3matches[desc] = nil
 						end
 					end
 					if type(wordlist) == 'function' then
-						del(cands, "AceTab <- cands")
+						del(cands)
 					end
 				end
 			end

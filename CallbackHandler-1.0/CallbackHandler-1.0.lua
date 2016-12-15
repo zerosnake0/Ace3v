@@ -7,7 +7,7 @@ if not CallbackHandler then return end -- No upgrade needed
 local AceCore = LibStub("AceCore-3.0")
 local new, del = AceCore.new, AceCore.del
 
-local meta = {__index = function(tbl, key) rawset(tbl, key, new("CallbackHandler -> events["..tostring(key).."]")) return tbl[key] end}
+local meta = {__index = function(tbl, key) rawset(tbl, key, new()) return tbl[key] end}
 
 -- Lua APIs
 local tconcat, tinsert, tgetn, tsetn = table.concat, table.insert, table.getn, table.setn
@@ -106,9 +106,9 @@ function CallbackHandler:New(target, RegisterName, UnregisterName, UnregisterAll
 						first = nil
 					end
 				end
-				del(callbacks, "CallbackHandler <- insertQueue["..eventname.."].callbaks")
+				del(callbacks)
 			end
-			del(registry.insertQueue, "CallbackHandler <- insertQueue")
+			del(registry.insertQueue)
 			registry.insertQueue = nil
 		end
 	end
@@ -174,7 +174,7 @@ function CallbackHandler:New(target, RegisterName, UnregisterName, UnregisterAll
 		else
 			-- we're currently processing a callback in this registry, so delay the registration of this new entry!
 			-- yes, we're a bit wasteful on garbage, but this is a fringe case, so we're picking low implementation overhead over garbage efficiency
-			registry.insertQueue = registry.insertQueue or setmetatable(new("CallbackHandler -> insertQueue"),meta)
+			registry.insertQueue = registry.insertQueue or setmetatable(new(),meta)
 			registry.insertQueue[eventname][self] = regfunc
 		end
 	end
@@ -196,7 +196,7 @@ function CallbackHandler:New(target, RegisterName, UnregisterName, UnregisterAll
 			end
 
 			if rawget(events, eventname) and not next(events[eventname]) then
-				del(events[eventname], "CallbackHandler <- events["..eventname.."]")
+				del(events[eventname])
 				events[eventname] = nil
 			end
 		end

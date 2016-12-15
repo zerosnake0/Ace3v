@@ -9,30 +9,10 @@ local strsub, strgsub, strfind = string.sub, string.gsub, string.find
 local tremove, tconcat = table.remove, table.concat
 local tgetn, tsetn = table.getn, table.setn
 
--- Debug util function, may be no longer necessary when finished
-function dbg(...)
-	for i=1,tgetn(arg) do
-		arg[i] = tostring(arg[i])
-	end
-	local s = table.concat(arg,",")
-	DEFAULT_CHAT_FRAME:AddMessage(s)
-	if SELECTED_CHAT_FRAME ~= DEFAULT_CHAT_FRAME then
-		SELECTED_CHAT_FRAME:AddMessage(s)
-	end
-end
-
-function dbg1(a1)
-	return function(...)
-		dbg(a1,unpack(arg))
-	end
-end
-
 local new, del
 do
 local list = setmetatable({}, {__mode = "k"})
-function new(dbgmsg)
-	DEFAULT_CHAT_FRAME:AddMessage(">>>>>>>>>>>>>>>>>>>"..(dbgmsg or ''))
-	if not dbgmsg then dbg(debugstack()) end
+function new()
 	local t = next(list)
 	if not t then
 		return {}
@@ -41,8 +21,7 @@ function new(dbgmsg)
 	return t
 end
 
-function del(t,dbgmsg)
-	DEFAULT_CHAT_FRAME:AddMessage("<<<<<<<<<<<<<<<<<<<"..(dbgmsg or ''))
+function del(t)
 	setmetatable(t, nil)
 	for k in pairs(t) do
 		t[k] = nil

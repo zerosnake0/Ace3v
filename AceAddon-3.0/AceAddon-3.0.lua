@@ -109,7 +109,7 @@ function AceAddon:NewAddon(objectorname,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 		error(strfmt("Usage: NewAddon([object,] name, [lib, lib, lib, ...]): 'name' - Addon '%s' already exists.", name), 2)
 	end
 
-	local args = new("AceAddon:NewAddon ->")
+	local args = new()
 	args[1] = a1
 	args[2] = a2
 	args[3] = a3
@@ -142,7 +142,7 @@ function AceAddon:NewAddon(objectorname,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 	elseif a0 then
 		self:EmbedLibraries(object,a0,args)
 	end
-	del(args,"AceAddon:NewAddon <-")
+	del(args)
 
 	-- add to queue of addons to be initialized upon ADDON_LOADED
 	tinsert(self.initializequeue, object)
