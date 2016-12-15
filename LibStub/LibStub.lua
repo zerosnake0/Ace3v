@@ -2,11 +2,11 @@
 -- LibStub is hereby placed in the Public Domain Credits: Kaelten, Cladhaire, ckknight, Mikk, Ammo, Nevcairiel, joshborke
 local LIBSTUB_MAJOR, LIBSTUB_MINOR = "LibStub", 2  -- NEVER MAKE THIS AN SVN REVISION! IT NEEDS TO BE USABLE IN ALL REPOS!
 local _G = getfenv(0)
-local strfind = string.find
+local strfind, strfmt = string.find, string.format
 local LibStub = _G[LIBSTUB_MAJOR]
 
 if not LibStub or LibStub.minor < LIBSTUB_MINOR then
-	LibStub = LibStub or {libs = {}, minors = {} }
+	LibStub = LibStub or { libs = {}, minors = {} }
 	_G[LIBSTUB_MAJOR] = LibStub
 	LibStub.minor = LIBSTUB_MINOR
 	
@@ -23,7 +23,7 @@ if not LibStub or LibStub.minor < LIBSTUB_MINOR then
 	
 	function LibStub:GetLibrary(major, silent)
 		if not self.libs[major] and not silent then
-			error(("Cannot find a library instance of %q."):format(tostring(major)), 2)
+			error(strfmt("Cannot find a library instance of %q.", tostring(major)), 2)
 		end
 		return self.libs[major], self.minors[major]
 	end

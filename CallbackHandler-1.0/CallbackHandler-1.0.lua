@@ -4,11 +4,6 @@ local CallbackHandler = LibStub:NewLibrary(MAJOR, MINOR)
 
 if not CallbackHandler then return end -- No upgrade needed
 
-local AceCore = LibStub("AceCore-3.0")
-local new, del = AceCore.new, AceCore.del
-
-local meta = {__index = function(tbl, key) rawset(tbl, key, new()) return tbl[key] end}
-
 -- Lua APIs
 local tconcat, tinsert, tgetn, tsetn = table.concat, table.insert, table.getn, table.setn
 local assert, error, loadstring = assert, error, loadstring
@@ -16,18 +11,42 @@ local setmetatable, rawset, rawget = setmetatable, rawset, rawget
 local next, pairs, type, tostring = next, pairs, type, tostring
 local strgsub = string.gsub
 
+local new, del
+do
+local list = setmetatable({}, {__mode = "k"})
+function new()
+	local t = next(list)
+	if not t then
+		return {}
+	end
+	list[t] = nil
+	return t
+end
+
+function del(t)
+	setmetatable(t, nil)
+	for k in pairs(t) do
+		t[k] = nil
+	end
+	tsetn(t,0)
+	list[t] = true
+end
+end
+
+local meta = {__index = function(tbl, key) rawset(tbl, key, new()) return tbl[key] end}
+
 -- Global vars/functions that we don't upvalue since they might get hooked, or upgraded
 -- List them here for Mikk's FindGlobals script
 -- GLOBALS: geterrorhandler
 
-local xpcall = xpcall
 local function errorhandler(err)
 	return geterrorhandler()(err)
 end
+CallbackHandler.errorhandler = errorhandler
 
 local function CreateDispatcher(argCount)
 	local code = [[
-		local errorhandler = LibStub("AceCore-3.0").errorhandler
+		local xpcall, errorhandler = xpcall, LibStub("CallbackHandler-1.0").errorhandler
 		local method, UP_ARGS
 		local function call()
 			local func, ARGS = method, UP_ARGS

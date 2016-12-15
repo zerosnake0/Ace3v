@@ -8,8 +8,9 @@
 ## X-License: Limited BSD
 
 LibStub\LibStub.lua
-AceCore-3.0\AceCore-3.0.xml
 CallbackHandler-1.0\CallbackHandler-1.0.xml
+
+AceCore-3.0\AceCore-3.0.xml
 AceAddon-3.0\AceAddon-3.0.xml
 AceEvent-3.0\AceEvent-3.0.xml
 AceTimer-3.0\AceTimer-3.0.xml

@@ -122,17 +122,14 @@ function new(self, loop, func, delay, argc,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
 
 	counter[self] = (counter[self] or 0) + 1
 
-	DEFAULT_CHAT_FRAME:AddMessage(">>>>>>>>>>>>>>>>> timer "..id)
 	timerFrame:Show()
 	return id
 end
 
 function del(t)
 	local id = tostring(t)
-	DEFAULT_CHAT_FRAME:AddMessage("<<<<<<<<<<<<<<<<< timer "..id)
 	activeTimers[id] = nil
 	if not next(activeTimers) then
-		DEFAULT_CHAT_FRAME:AddMessage("Last timer ended")
 		timerFrame:Hide()
 	end
 	local self = t.object
