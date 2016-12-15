@@ -1,6 +1,6 @@
 ## Interface: 11200
 
-## Title: Ace3
+## Title: Lib: Ace3
 ## Notes: AddOn development framework
 ## Author: Ace3 Development Team
 ## X-Website: http://www.wowace.com
