@@ -1,0 +1,6 @@
+[submodule "LibStub"]
+	path = LibStub
+	url = git@github.com:zerosnake0/LibStub.git
+[submodule "CallbackHandler-1.0"]
+	path = CallbackHandler-1.0
+	url = git@github.com:zerosnake0/CallbackHandler-1.0.git
