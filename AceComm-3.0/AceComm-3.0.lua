@@ -210,11 +210,11 @@ do
 		if type(olddata) == "table" then
 			-- if we've received a "next", the spooled data will be a table for rapid & garbage-free tconcat
 			tinsert(olddata, message)
-			AceComm.callbacks:Fire(prefix, tconcat(olddata, ""), distribution, sender)
+			AceComm.callbacks:Fire(prefix, 3, tconcat(olddata, ""), distribution, sender)
 			compost[olddata] = true
 		else
 			-- if we've only received a "first", the spooled data will still only be a string
-			AceComm.callbacks:Fire(prefix, olddata..message, distribution, sender)
+			AceComm.callbacks:Fire(prefix, 3, olddata..message, distribution, sender)
 		end
 	end
 end
@@ -256,13 +256,13 @@ local function OnEvent()
 			elseif control==MSG_MULTI_LAST then
 				AceComm:OnReceiveMultipartLast(prefix, rest, distribution, sender)
 			elseif control==MSG_ESCAPE then
-				AceComm.callbacks:Fire(prefix, rest, distribution, sender)
+				AceComm.callbacks:Fire(prefix, 3, rest, distribution, sender)
 			else
 				-- unknown control character, ignore SILENTLY (dont warn unnecessarily about future extensions!)
 			end
 		else
 			-- single part: fire it off immediately and let CallbackHandler decide if it's registered or not
-			AceComm.callbacks:Fire(prefix, message, distribution, sender)
+			AceComm.callbacks:Fire(prefix, 3, message, distribution, sender)
 		end
 	else
 		assert(false, "Received "..tostring(event).." event?!")

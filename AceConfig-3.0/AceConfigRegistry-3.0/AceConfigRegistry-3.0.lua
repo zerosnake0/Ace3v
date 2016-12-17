@@ -269,7 +269,7 @@ end
 -- @param appName The application name as given to `:RegisterOptionsTable()`
 function AceConfigRegistry:NotifyChange(appName)
 	if not AceConfigRegistry.tables[appName] then return end
-	AceConfigRegistry.callbacks:Fire("ConfigTableChange", appName)
+	AceConfigRegistry.callbacks:Fire("ConfigTableChange", 1, appName)
 end
 
 -- -------------------------------------------------------------------

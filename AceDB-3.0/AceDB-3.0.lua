@@ -228,7 +228,7 @@ local dbmt = {
 			if section == "profile" then
 				if initSection(t, section, "profiles", key, defaults) then
 					-- Callback: OnNewProfile, database, newProfileKey
-					t.callbacks:Fire("OnNewProfile", t, key)
+					t.callbacks:Fire("OnNewProfile", 2, t, key)
 				end
 			elseif section == "profiles" then
 				local sv = rawget(t, "sv")
@@ -368,7 +368,7 @@ end
 local function logoutHandler()
 	if event == "PLAYER_LOGOUT" then
 		for db in pairs(AceDB.db_registry) do
-			db.callbacks:Fire("OnDatabaseShutdown", db)
+			db.callbacks:Fire("OnDatabaseShutdown", 1, db)
 			db:RegisterDefaults(nil)
 
 			-- cleanup sections that are empty without defaults
@@ -448,7 +448,7 @@ function DBObjectLib:SetProfile(name)
 	local defaults = self.defaults and self.defaults.profile
 
 	-- Callback: OnProfileShutdown, database
-	self.callbacks:Fire("OnProfileShutdown", self)
+	self.callbacks:Fire("OnProfileShutdown", 1, self)
 
 	if oldProfile and defaults then
 		-- Remove the defaults from the old profile
@@ -472,7 +472,7 @@ function DBObjectLib:SetProfile(name)
 	end
 
 	-- Callback: OnProfileChanged, database, newProfileKey
-	self.callbacks:Fire("OnProfileChanged", self, name)
+	self.callbacks:Fire("OnProfileChanged", 2, self, name)
 end
 
 --- Returns a table with the names of the existing profiles in the database.
@@ -548,7 +548,7 @@ function DBObjectLib:DeleteProfile(name, silent)
 	end
 
 	-- Callback: OnProfileDeleted, database, profileKey
-	self.callbacks:Fire("OnProfileDeleted", self, name)
+	self.callbacks:Fire("OnProfileDeleted", 2, self, name)
 end
 
 --- Copies a named profile into the current profile, overwriting any conflicting
@@ -584,7 +584,7 @@ function DBObjectLib:CopyProfile(name, silent)
 	end
 
 	-- Callback: OnProfileCopied, database, sourceProfileKey
-	self.callbacks:Fire("OnProfileCopied", self, name)
+	self.callbacks:Fire("OnProfileCopied", 2, self, name)
 end
 
 --- Resets the current profile to the default values (if specified).
@@ -611,7 +611,7 @@ function DBObjectLib:ResetProfile(noChildren, noCallbacks)
 
 	-- Callback: OnProfileReset, database
 	if not noCallbacks then
-		self.callbacks:Fire("OnProfileReset", self, self.keys["profile"])
+		self.callbacks:Fire("OnProfileReset", 2, self, self.keys["profile"])
 	end
 end
 
@@ -642,9 +642,9 @@ function DBObjectLib:ResetDB(defaultProfile)
 	end
 
 	-- Callback: OnDatabaseReset, database
-	self.callbacks:Fire("OnDatabaseReset", self)
+	self.callbacks:Fire("OnDatabaseReset", 1, self)
 	-- Callback: OnProfileChanged, database, profileKey
-	self.callbacks:Fire("OnProfileChanged", self, self.keys["profile"])
+	self.callbacks:Fire("OnProfileChanged", 2, self, self.keys["profile"])
 
 	return self
 end
